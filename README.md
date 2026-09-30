@@ -2,7 +2,7 @@
 
 중학교 1학년 과학 Ⅵ. 기체의 성질 (미래엔 2022 개정, 김태일) 수업용 게임. 크롬북 터치 1280×800 기준.
 
-**상태: 설계 스펙 v1 승인됨(2026-09-30).** 구현 계획서를 쓰기 전이라 게임 코드와 프로젝트 뼈대는 아직 없다.
+**상태: 설계 스펙 v1 승인됨(2026-09-30).** 구현 계획서가 작성되었고([docs/superpowers/plans/2026-09-30-gas-mvp.md](docs/superpowers/plans/2026-09-30-gas-mvp.md)), 게임 코드와 프로젝트 뼈대는 아직 없다.
 
 - 설계 스펙: [docs/superpowers/specs/2026-09-30-g1-gas-design.md](docs/superpowers/specs/2026-09-30-g1-gas-design.md)
 - 가안(v0, 스펙이 대체): [docs/superpowers/specs/2026-09-30-g1-gas-draft.md](docs/superpowers/specs/2026-09-30-g1-gas-draft.md)
