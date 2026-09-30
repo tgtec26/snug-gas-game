@@ -1,11 +1,15 @@
 'use client';
 
 import type { ComponentType } from 'react';
+import { HUD } from '@/components/HUD';
 import { TopControls } from '@/components/TopControls';
 import { AudioRunner } from '@/components/AudioRunner';
 import { DevSkip } from '@/components/DevSkip';
 import { TitleOverlay } from '@/components/overlays/TitleOverlay';
 import { IntroOverlay } from '@/components/overlays/IntroOverlay';
+import { ClinicOverlay } from '@/components/overlays/ClinicOverlay';
+import { StoryOverlay } from '@/components/overlays/StoryOverlay';
+import { DiagnosisOverlay } from '@/components/overlays/DiagnosisOverlay';
 import { useGame } from '@/game/store';
 import type { Phase } from '@/game/types';
 
@@ -17,10 +21,10 @@ export const OVERLAYS: Record<Phase, ComponentType> = {
   title: TitleOverlay,
   intro: IntroOverlay,
   tutorial: Pending,    // Task 12
-  clinic: Pending,      // Task 6
-  story: Pending,       // Task 6
+  clinic: ClinicOverlay,
+  story: StoryOverlay,
   exam: Pending,        // Task 7~11
-  diagnosis: Pending,   // Task 6
+  diagnosis: DiagnosisOverlay,
   emergency: Pending,   // Task 13
   ending: Pending,      // Task 14
   result: Pending,      // Task 14
@@ -32,6 +36,7 @@ export function UIOverlay() {
   const Current = OVERLAYS[phase];
   return (
     <div className="absolute inset-0 pointer-events-none">
+      <HUD />
       <Current />
       <DevSkip />
       <TopControls />
