@@ -1,0 +1,9 @@
+{
+  "syringe": { "start": 20, "min": 12, "max": 28 },
+  "measure": { "from": 20, "to": 12, "dwellMs": 400 },
+  "tolerance": 0.75,
+  "holdMs": 800,
+  "temp": { "minStep": -4, "maxStep": 4, "perStep": 1.5 },
+  "gear": ["gloves", "goggles"],
+  "lens": { "observeMs": 2000 }
+}

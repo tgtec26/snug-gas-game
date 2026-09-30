@@ -1,0 +1,6 @@
+[
+  { "variable": "pressure", "change": "up", "count": "same", "distance": "decrease", "collisionCount": "increase", "strength": null, "speed": "same" },
+  { "variable": "pressure", "change": "down", "count": "same", "distance": "increase", "collisionCount": "decrease", "strength": null, "speed": "same" },
+  { "variable": "temperature", "change": "up", "count": "same", "distance": null, "collisionCount": null, "strength": "increase", "speed": "increase" },
+  { "variable": "temperature", "change": "down", "count": "same", "distance": null, "collisionCount": null, "strength": "decrease", "speed": "decrease" }
+]

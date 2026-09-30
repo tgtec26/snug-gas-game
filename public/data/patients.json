@@ -1,0 +1,18 @@
+[
+  { "id": "rubberball", "name": "고무공", "kind": "measure", "variable": "pressure", "scene": "sit-on-ball", "gauge": "pressure-sensor", "pages": [200, 202], "verified": true,
+    "steps": [ { "change": "up", "size": 8, "role": "cause" }, { "change": "down", "size": 8, "role": "explore" } ] },
+  { "id": "snackbag", "name": "과자 봉지", "kind": "redo", "variable": "pressure", "scene": "mountain", "gauge": "pressure-sensor", "pages": [204, 207], "verified": true,
+    "steps": [ { "change": "down", "size": 5, "role": "cause" }, { "change": "up", "size": 5, "role": "explore" } ] },
+  { "id": "foilballoon", "name": "은박 풍선", "kind": "dip", "variable": "temperature", "scene": "cold-outside", "gauge": "thermometer", "pages": [210], "verified": true,
+    "steps": [ { "change": "down", "size": 3, "role": "cause" }, { "change": "up", "size": 3, "role": "explore" } ] },
+  { "id": "soccerball", "name": "축구공", "kind": "redo", "variable": "temperature", "scene": "winter-field", "gauge": "thermometer", "pages": [214, 217], "verified": true,
+    "steps": [ { "change": "down", "size": 3, "role": "cause" }, { "change": "up", "size": 3, "role": "explore" } ] },
+  { "id": "ppball", "name": "찌그러진 탁구공", "kind": "emergency", "variable": "temperature", "scene": "dented-ball", "gauge": "thermometer", "pages": [215, 217], "verified": true,
+    "steps": [ { "change": "up", "size": 3, "role": "cause" } ] },
+  { "id": "airbed", "name": "공기 침대", "kind": "emergency", "variable": "pressure", "scene": "lie-on-bed", "gauge": "pressure-sensor", "pages": [204, 207], "verified": true,
+    "steps": [ { "change": "up", "size": 4, "role": "cause" } ] },
+  { "id": "balloon", "name": "열기구", "kind": "emergency", "variable": "temperature", "scene": "heat-balloon", "gauge": "thermometer", "pages": [214, 217], "verified": true,
+    "steps": [ { "change": "up", "size": 4, "role": "cause" } ] },
+  { "id": "shoe", "name": "공기 주머니 운동화", "kind": "emergency", "variable": "pressure", "scene": "landing", "gauge": "pressure-sensor", "pages": [205], "verified": true,
+    "steps": [ { "change": "up", "size": 3, "role": "cause" } ] }
+]
