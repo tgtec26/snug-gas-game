@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+* { word-break: keep-all; overflow-wrap: break-word; }
+
+html, body {
+  margin: 0; padding: 0; background: #000; color: #fff;
+  font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
