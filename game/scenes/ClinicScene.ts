@@ -51,6 +51,7 @@ export class ClinicScene extends Phaser.Scene {
   private lastTick = 0;
   private finishTimer: number | null = null;
   private popAt: Record<number, number> = {};
+  private stepStartAt = 0;
 
   constructor() { super({ key: 'Clinic' }); }
 
@@ -67,7 +68,7 @@ export class ClinicScene extends Phaser.Scene {
     this.limitMs = data.minigame.examTimeLimitMs; this.hintIdleMs = data.minigame.hintIdleMs; this.holdFinishMs = data.minigame.successHoldMs;
     this.st = createExam(this.cfg, patient);
     this.lastActionAt = performance.now(); this.lastTick = performance.now();
-    this.finishing = false; this.popAt = {}; this.drag = null; this.shake = { piston: 0, dial: 0 };
+    this.finishing = false; this.stepStartAt = performance.now(); this.popAt = {}; this.drag = null; this.shake = { piston: 0, dial: 0 };
 
     this.g = this.add.graphics().setDepth(10);
     const key = `patient_${patient.id}_ph`;
@@ -212,7 +213,7 @@ export class ClinicScene extends Phaser.Scene {
       playSfx('correct'); this.popAt[e.volume] = performance.now();
       const y = this.headY(e.volume); this.sparkle(this.L.barrel.x + this.L.barrel.w / 2 + 14, y, 6);
     } else if (e.type === 'step-done') {
-      playSfx('correct'); this.cameras.main.flash(160, 255, 255, 255, true);
+      this.stepStartAt = performance.now(); playSfx('correct'); this.cameras.main.flash(160, 255, 255, 255, true);
       this.tweens.add({ targets: this.previewImg, scale: this.previewImg.scale * 1.12, yoyo: true, duration: 140 });
       this.sparkle(this.L.patient.x, this.L.patient.y, 14);
     } else if (e.type === 'all-done' && !this.finishing) {
@@ -468,7 +469,7 @@ export class ClinicScene extends Phaser.Scene {
 
     // 손 모양 안내: 처음 또는 한참 조작이 없을 때 글 없이 끌어 가는 모양을 보여 준다
     const idle = now - this.lastActionAt;
-    if (!this.st.done && ((this.st.used === null && now > 700) || idle > this.hintIdleMs) && !this.drag) {
+    if (!this.st.done && ((this.st.used === null && now > 700) || idle > this.hintIdleMs || (this.patient.steps[this.st.stepIndex].role === 'explore' && now - this.stepStartAt > 900)) && !this.drag) {
       const k = (now % 1800) / 1800; const e = k < 0.75 ? Phaser.Math.Easing.Sine.InOut(k / 0.75) : 1;
       let hx: number, hy: number;
       if (this.patient.variable === 'pressure') {
