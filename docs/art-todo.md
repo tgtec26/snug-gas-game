@@ -12,7 +12,7 @@
 
 ## 교체 완료 (2026-10-01, codex gpt-5.5)
 
-배경 2장(`bg/clinic`, `bg/exam`), 진료소장 초상(`npc/doctor`), 환자 8종 + 응급실 문(`patients/*.webp`, 시트 한 장을 `scripts/slice_sheet.py`로 잘랐다). 원본은 `docs/assets-source/`. `public/assets/manifest.json`에 적혀 있고, 그림이 없으면 SVG 플레이스홀더로 돌아간다. 이 계정은 기본 모델(`gpt-6.1-sol`)을 지원하지 않아 `CODEX_MODEL=gpt-5.5 scripts/gen_image.sh ...`로 지정한다(`~/.codex/config.toml`은 건드리지 않았다). **아직 플레이스홀더**: 견습 의사 초상(쓰는 곳 없음), 사연 장면 8장, 계기, 검사 장치 부품, 담그기 소품, 렌즈, 구슬 병, 피날레, 도장.
+배경 2장(`bg/clinic`, `bg/exam`), 진료소장 초상(`npc/doctor`), 환자 8종 + 응급실 문(`patients/*.webp`, 시트 한 장을 `scripts/slice_sheet.py`로 잘랐다). 원본은 `docs/assets-source/`. `public/assets/manifest.json`에 적혀 있고, 그림이 없으면 SVG 플레이스홀더로 돌아간다. 이 계정은 기본 모델(`gpt-6.1-sol`)을 지원하지 않아 `CODEX_MODEL=gpt-5.5 scripts/gen_image.sh ...`로 지정한다(`~/.codex/config.toml`은 건드리지 않았다). 사연 장면 8장(`story/*.webp`, 560×400 배경, 가운데 아래는 환자 자리로 비움)도 교체했다. **아직 플레이스홀더**: 견습 의사 초상(쓰는 곳 없음), 계기, 검사 장치 부품, 담그기 소품, 렌즈, 구슬 병, 피날레, 도장.
 
 ## 이미 교체 장치가 있는 것 (파일만 넣고 `public/assets/manifest.json`에 경로를 적으면 자동 교체)
 

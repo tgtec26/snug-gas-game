@@ -27,6 +27,7 @@ export function Story({ patient, endMs, onDone }: { patient: Patient; endMs: num
   const finishStory = onDone;
   const locked = useLock('short');
   const plan = storyPlan(patient);
+  const art = useDataStore(s => s.art.includes(`story/${plan.scene}.webp`));
   const [value, setValue] = useState(plan.from);
   const [moved, setMoved] = useState(false);
 
@@ -54,9 +55,14 @@ export function Story({ patient, endMs, onDone }: { patient: Patient; endMs: num
     <div className="absolute inset-0 bg-black/55 pointer-events-auto cursor-pointer select-none" onClick={skip}>
       <div className="absolute flex items-center gap-8" style={{ left: 230, top: 170 }}>
         <div className="relative w-[560px] h-[400px] rounded-3xl overflow-hidden border-[6px] border-white shadow-[0_14px_36px_rgba(0,0,0,0.5)]">
-          <svg className="absolute inset-0" width="560" height="400" viewBox="0 0 560 400" aria-hidden="true">
-            {STORY_DECOR[plan.scene as StorySceneId]}
-          </svg>
+          {art
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img className="absolute inset-0" src={`/assets/story/${plan.scene}.webp`} alt="" width={560} height={400} draggable={false} style={{ objectFit: 'cover' }} />
+            : (
+              <svg className="absolute inset-0" width="560" height="400" viewBox="0 0 560 400" aria-hidden="true">
+                {STORY_DECOR[plan.scene as StorySceneId]}
+              </svg>
+            )}
           <div className="absolute" style={{ left: 195, top: 172, width: 170, height: 170 }}>
             <div style={{ transform: deform, transformOrigin: '50% 88%', transition: 'transform 1600ms ease-in-out', width: 170, height: 170 }}>
               <PatientIcon id={patient.id} size={170} />
