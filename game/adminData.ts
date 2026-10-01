@@ -17,7 +17,7 @@ export const filePathOf = (f: DataFile): string => (f === 'manifest' ? `public/a
 const DIALOG_KEYS = ['doctor', 'intro', 'diagnosis', 'tutorial', 'hints', 'ending'];
 
 /**
- * 파일 하나를 저장하기 전 검사. 다른 파일과 엮이는 검사(환자 ↔ 실험 설정 ↔ 대사 등)도 한다.
+ * 파일 하나를 저장하기 전 검사. 다른 파일과 엮이는 검사(환자, 실험 설정, 대사끼리 맞는지 등)도 한다.
  * all은 디스크에 있는 현재 값이고, body가 해당 파일의 새 값이다.
  */
 export function validateFile(file: DataFile, body: unknown, all: Record<DataFile, unknown>): string[] {
