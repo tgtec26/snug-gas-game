@@ -5,6 +5,7 @@ import { useGame, nextExamId } from '@/game/store';
 import { useDataStore } from '@/game/dataStore';
 import { useLock } from '@/components/hooks/useLock';
 import { useDrag } from '@/components/hooks/useDrag';
+import { GoalBar } from '@/components/GoalBar';
 import { PatientIcon } from '@/components/art/PatientIcon';
 
 /** 검사대 자리 (드롭 판정, 터치 여유 포함). 무대 1280×800 좌표. */
@@ -54,6 +55,7 @@ function Clinic() {
     if (moved && inTable(x, y)) trigger(id);
   }, [trigger]);
   const { drag, begin } = useDrag(stage, onDrop);
+  const goal = useDataStore(s => s.dialog?.goals.clinic ?? '');
 
   // 한참 조작이 없으면 글 없이 손 모양으로 "끌어다 놓기"를 보여 준다. 조건이 바뀌면 키가 바뀌어 힌트가 저절로 꺼진다.
   const hintKey = `${activeId}:${locked ? 'l' : 'u'}:${drag ? 'd' : 'n'}`;
@@ -74,6 +76,7 @@ function Clinic() {
 
   return (
     <div ref={stage} className="absolute inset-0 pointer-events-none select-none">
+      <GoalBar text={goal} />
       {/* 검사대 놓을 자리 */}
       <div className={`absolute rounded-3xl border-4 border-dashed ${drag ? 'border-amber-300 bg-amber-300/25' : 'border-white/70 bg-white/10'}`}
         style={{ left: TABLE.x1 + 40, top: TABLE.y1 + 30, width: TABLE.x2 - TABLE.x1 - 80, height: 120, animation: locked ? undefined : 'glow 1.8s ease-in-out infinite' }}>

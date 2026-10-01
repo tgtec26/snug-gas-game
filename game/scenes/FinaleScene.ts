@@ -5,6 +5,7 @@ import { useGame } from '@/game/store';
 import { useDataStore } from '@/game/dataStore';
 import { summarize } from '@/game/summary';
 import { playSfx } from '@/game/audio';
+import { GoalBanner } from '@/game/systems/goalBanner';
 
 type Stage = 'pause' | 'pump' | 'launch' | 'count' | 'done';
 
@@ -13,6 +14,7 @@ const SKIP_AFTER_MS = 1000; // 잠금이 풀린 뒤부터 건너뛸 수 있다
 /** 에어 로켓 피날레(6-8): 펌프 연타 → 로켓이 위쪽 하늘로 발사 → 빛 폭발·팡파르 → 별 카운트업 → 요약 팝업. 원리는 글로 설명하지 않는 연출. */
 export class FinaleScene extends Phaser.Scene {
   private g!: Phaser.GameObjects.Graphics;
+  private goal!: GoalBanner;
   private sp!: Record<'pumpbody' | 'pumphandle' | 'gauge' | 'pad' | 'rocket', Phaser.GameObjects.Image>;
   private stage: Stage = 'pause';
   private t0 = 0;
@@ -44,6 +46,7 @@ export class FinaleScene extends Phaser.Scene {
     attachRouter(this);
     this.add.image(640, 400, 'finale_bg').setDisplaySize(1280, 800).setDepth(0);
     this.g = this.add.graphics().setDepth(5);
+    this.goal = new GoalBanner(this);
     this.sp = {
       pumpbody: this.add.image(0, 0, 'sp_pumpbody').setDepth(4), pumphandle: this.add.image(0, 0, 'sp_pumphandle').setDepth(4),
       gauge: this.add.image(0, 0, 'sp_gauge').setDepth(4), pad: this.add.image(0, 0, 'sp_pad').setDepth(4), rocket: this.add.image(0, 0, 'sp_rocket').setDepth(4),
@@ -169,6 +172,7 @@ export class FinaleScene extends Phaser.Scene {
     this.drawPump(g);
     this.drawPad(g);
     this.sp.rocket.setVisible(false);
+    this.goal.set(this.stage === 'pump' || this.stage === 'pause' ? (useDataStore.getState().dialog?.goals.finale ?? '') : '');
     if (this.stage === 'pause' || this.stage === 'pump') this.drawRocket(g, 600, false);
     if (this.stage === 'launch' || this.stage === 'count' || this.stage === 'done') {
       for (const p of this.trail) { const k = (now - p.t0) / 500; g.fillStyle(0xffffff, 0.6 * (1 - k)); g.fillCircle(p.x, p.y + k * 40, 14 * (1 - k) + 4); }

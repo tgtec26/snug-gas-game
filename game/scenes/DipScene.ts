@@ -8,6 +8,8 @@ import { createExam, tickExam, examResult, type ExamState, type ExamEvent } from
 import { resolveSyringe, stepDip, waterTopY, type DipResolved, type Beaker } from '@/game/dip';
 import { deviceVolume, stepTargetVolume } from '@/game/rules';
 import { LensView } from '@/game/systems/lens';
+import { GoalBanner } from '@/game/systems/goalBanner';
+import { goalFor } from '@/game/goals';
 import { inEmergency, roundBlocked, comboRate } from '@/game/systems/emergencyRound';
 import type { Experiments, Patient } from '@/game/types';
 import type { DipLayout, ClinicLayout } from '@/game/layout';
@@ -49,6 +51,7 @@ export class DipScene extends Phaser.Scene {
   private finishing = false;
   private finishTimer: number | null = null;
   private lens!: LensView;
+  private goal!: GoalBanner;
   private sp!: {
     barrel: Phaser.GameObjects.Image; beakerHot: Phaser.GameObjects.Image; beakerCold: Phaser.GameObjects.Image; grip: Phaser.GameObjects.Image;
     kid: Phaser.GameObjects.Image; gogglesWorn: Phaser.GameObjects.Image; gloveL: Phaser.GameObjects.Image; gloveR: Phaser.GameObjects.Image;
@@ -76,6 +79,7 @@ export class DipScene extends Phaser.Scene {
     this.res = resolveSyringe(this.L, this.cfg, this.worn, this.target.x, this.target.y);
 
     this.g = this.add.graphics().setDepth(10);
+    this.goal = new GoalBanner(this, inEmergency() ? 764 : 44);
     const im = (k: string, d: number) => this.add.image(0, 0, `sp_${k}`).setDepth(d);
     this.sp = {
       barrel: im('barrel', 11), beakerHot: im('beaker', 8), beakerCold: im('beaker', 8), grip: im('grip', 13),
@@ -85,7 +89,7 @@ export class DipScene extends Phaser.Scene {
     const key = this.textures.exists(`patient_${patient.id}`) ? `patient_${patient.id}` : `patient_${patient.id}_ph`; const p = this.PL;
     this.ghostImg = this.add.image(p.x, p.y, key).setDepth(9).setTint(0x1b2a33).setTintMode(Phaser.TintModes.FILL).setAlpha(0.28);
     this.previewImg = this.add.image(p.x, p.y, key).setDepth(11);
-    this.hintText = this.add.text(640, 70, '', { ...TEXT, ...OUTLINE, fontSize: '26px', fontStyle: 'bold', color: '#ffffff' }).setDepth(30).setOrigin(0.5).setAlpha(0);
+    this.hintText = this.add.text(640, 112, '', { ...TEXT, ...OUTLINE, fontSize: '26px', fontStyle: 'bold', color: '#ffffff' }).setDepth(30).setOrigin(0.5).setAlpha(0);
 
     this.input.on('pointerdown', this.onDown, this);
     this.input.on('pointermove', this.onMove, this);
@@ -173,6 +177,7 @@ export class DipScene extends Phaser.Scene {
     for (const e of r.events) this.onEvent(e);
     this.draw();
     this.lens.update(dt);
+    const goals = useDataStore.getState().dialog?.goals; if (goals) this.goal.set(this.st.done ? '' : goalFor(goals, this.patient, this.st.stepIndex));
   }
 
   private say(text: string, ms = 2200) { this.hintText.setText(text).setAlpha(1); this.hintUntil = performance.now() + ms; }

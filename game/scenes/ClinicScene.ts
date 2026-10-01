@@ -9,6 +9,8 @@ import {
 } from '@/game/exam';
 import { checkPistonRun, deviceVolume, heldConstant, needleFromVolume, pressureReading, stepTargetVolume, badgeText } from '@/game/rules';
 import { LensView } from '@/game/systems/lens';
+import { GoalBanner } from '@/game/systems/goalBanner';
+import { goalFor } from '@/game/goals';
 import { inEmergency, roundBlocked, comboRate } from '@/game/systems/emergencyRound';
 import type { Experiments, Patient } from '@/game/types';
 import type { ClinicLayout } from '@/game/layout';
@@ -56,6 +58,7 @@ export class ClinicScene extends Phaser.Scene {
   private lastPistonVol = 0;
   private lastPistonSound = 0;
   private lens!: LensView;
+  private goal!: GoalBanner;
   private sp!: Record<'barrel' | 'beaker' | 'grip' | 'gauge' | 'thermo' | 'knob', Phaser.GameObjects.Image>;
   private GRIP_ASPECT = 3.24;
   private stepStartAt = 0;
@@ -78,6 +81,7 @@ export class ClinicScene extends Phaser.Scene {
     this.finishing = false; this.stepStartAt = performance.now(); this.popAt = {}; this.drag = null; this.shake = { piston: 0, dial: 0 };
 
     this.g = this.add.graphics().setDepth(10);
+    this.goal = new GoalBanner(this, inEmergency() ? 764 : 44);
     const im = (k: string, d: number) => this.add.image(0, 0, `sp_${k}`).setDepth(d);
     this.sp = { barrel: im('barrel', 11), beaker: im('beaker', 8), grip: im('grip', 13), gauge: im('gauge', 9), thermo: im('thermo', 9), knob: im('knob', 9) };
     this.GRIP_ASPECT = 366 / 113;
@@ -87,7 +91,7 @@ export class ClinicScene extends Phaser.Scene {
     this.previewImg = this.add.image(p.x, p.y, key).setDepth(11);
     const t = (color: string) => this.add.text(0, 0, '', { ...TEXT, ...OUTLINE, fontSize: '22px', fontStyle: 'bold', color }).setDepth(20).setOrigin(0.5);
     this.badgeTemp = t('#ffe28a'); this.badgePress = t('#ffe28a');
-    this.hintText = this.add.text(640, 70, '', { ...TEXT, ...OUTLINE, fontSize: '26px', fontStyle: 'bold', color: '#ffffff' }).setDepth(30).setOrigin(0.5).setAlpha(0);
+    this.hintText = this.add.text(640, 112, '', { ...TEXT, ...OUTLINE, fontSize: '26px', fontStyle: 'bold', color: '#ffffff' }).setDepth(30).setOrigin(0.5).setAlpha(0);
 
     this.input.on('pointerdown', this.onDown, this);
     this.input.on('pointermove', this.onMove, this);
@@ -215,6 +219,7 @@ export class ClinicScene extends Phaser.Scene {
     for (const e of r.events) this.onEvent(e);
     this.draw();
     this.lens.update(dt);
+    const goals = useDataStore.getState().dialog?.goals; if (goals) this.goal.set(this.st.done ? '' : goalFor(goals, this.patient, this.st.stepIndex));
     this.pistonSound();
   }
 

@@ -5,6 +5,7 @@ import { useGame } from '@/game/store';
 import { useDataStore } from '@/game/dataStore';
 import { storyPlan, type StorySceneId } from '@/game/story';
 import { useLock } from '@/components/hooks/useLock';
+import { GoalBar } from '@/components/GoalBar';
 import { PatientIcon } from '@/components/art/PatientIcon';
 import { PressureGauge, Thermometer } from '@/components/art/Gauges';
 import { STORY_DECOR } from '@/components/art/storyDecor';
@@ -27,6 +28,7 @@ export function Story({ patient, endMs, onDone }: { patient: Patient; endMs: num
   const finishStory = onDone;
   const locked = useLock('short');
   const plan = storyPlan(patient);
+  const goal = useDataStore(s => s.dialog?.goals.story ?? '');
   const art = useDataStore(s => s.art.includes(`story/${plan.scene}.webp`));
   const [value, setValue] = useState(plan.from);
   const [moved, setMoved] = useState(false);
@@ -53,6 +55,7 @@ export function Story({ patient, endMs, onDone }: { patient: Patient; endMs: num
 
   return (
     <div className="absolute inset-0 bg-black/55 pointer-events-auto cursor-pointer select-none" onClick={skip}>
+      <GoalBar text={goal} />
       <div className="absolute flex items-center gap-8" style={{ left: 230, top: 170 }}>
         <div className="relative w-[560px] h-[400px] rounded-3xl overflow-hidden border-[6px] border-white shadow-[0_14px_36px_rgba(0,0,0,0.5)]">
           {art

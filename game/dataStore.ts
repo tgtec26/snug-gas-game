@@ -3,6 +3,7 @@ import type { Experiments, ParticleRule, Patient, Person, HomeworkCard } from '@
 import { validateDataset } from '@/game/validators';
 import { configureAudio, validateAudioConfig, type AudioConfig } from '@/game/audio';
 import { validateLayout, type Layout } from '@/game/layout';
+import type { Goals } from '@/game/goals';
 import { validateMinigame, type MinigameConfig } from '@/game/exam';
 import { useGame } from '@/game/store';
 
@@ -11,6 +12,7 @@ export interface DialogConfig {
   intro: string[];
   diagnosis: { boyle: string[]; charles: string[] };
   tutorial: { card: string; line: string };
+  goals: Goals;
   hints: { wrongGauge: string; gear: string; submerge: string; hold: string; notThere: string };
   ending: string[];
 }

@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { GoalBanner } from '@/game/systems/goalBanner';
 import { hiDpi, addBg, TEXT } from '@/game/systems/render';
 import { attachRouter } from '@/game/systems/sceneRouter';
 import { useGame } from '@/game/store';
@@ -30,7 +31,8 @@ export class ShakeScene extends Phaser.Scene {
   private doneAt = 0;
   private card: Phaser.GameObjects.Container | null = null;
   private balls: Phaser.GameObjects.Image[] = [];
-  private sp!: { bottle: Phaser.GameObjects.Image; palm: Phaser.GameObjects.Image };
+  private sp!: { bottle: Phaser.GameObjects.Image; gauge: Phaser.GameObjects.Image };
+  private goal!: GoalBanner;
 
   constructor() { super({ key: 'Shake' }); }
 
@@ -46,7 +48,8 @@ export class ShakeScene extends Phaser.Scene {
     this.lastTick = performance.now(); this.lastAct = performance.now(); this.lastSound = 0;
     this.g = this.add.graphics().setDepth(10);
     this.balls = Array.from({ length: this.cfg.balls }, () => this.add.image(0, 0, 'sp_ball').setDepth(11));
-    this.sp = { bottle: this.add.image(0, 0, 'sp_bottle').setDepth(12), palm: this.add.image(0, 0, 'sp_palm').setDepth(11) };
+    this.sp = { bottle: this.add.image(0, 0, 'sp_bottle').setDepth(12), gauge: this.add.image(0, 0, 'sp_gauge').setDepth(9) };
+    this.goal = new GoalBanner(this); this.goal.set(data.dialog?.goals.tutorial ?? '');
 
     this.input.on('pointerdown', this.onDown, this);
     this.input.on('pointermove', this.onMove, this);
@@ -111,7 +114,7 @@ export class ShakeScene extends Phaser.Scene {
   }
 
   private complete() {
-    this.doneAt = performance.now(); this.grab = null;
+    this.doneAt = performance.now(); this.grab = null; this.goal.set('');
     playSfx('fanfare'); this.cameras.main.flash(200, 255, 255, 255, true); this.cameras.main.shake(180, 0.006);
     for (let i = 0; i < 30; i++) {
       const a = (i / 30) * Math.PI * 2; const d = 120 + Math.random() * 160;
@@ -140,8 +143,9 @@ export class ShakeScene extends Phaser.Scene {
     // 병 그림자
     g.fillStyle(0x000000, 0.22); g.fillEllipse(x, b.y + 16, b.w + 50, 30);
     // 병은 그림(투명한 페트병이 구슬 위로 겹친다), 구슬은 그림 20개
-    const top = b.y - b.h;
-    this.sp.bottle.setPosition(x, top - 112 + (b.h + 112) / 2).setDisplaySize((b.h + 112) * (151 / 355), b.h + 112);
+    // 그림의 병 안쪽(어깨 아래 ~ 바닥 굴곡 위)이 물리 영역(b.w × b.h)과 맞도록 키운다
+    const H = b.h / 0.68; const imgTop = b.y - 0.93 * H;
+    this.sp.bottle.setPosition(x, imgTop + H / 2).setDisplaySize(H * (151 / 355), H);
     this.balls.forEach((im, i) => { const p = this.st.balls[i]; im.setVisible(!!p); if (p) im.setPosition(p.x, p.y).setDisplaySize(BALL_R * 2.3, BALL_R * 2.3); });
     // 충돌 섬광
     for (const f of this.flashes) {
@@ -151,23 +155,25 @@ export class ShakeScene extends Phaser.Scene {
     }
     this.drawGauge(g, now);
     if (!this.doneAt && now - this.lastAct > 3500 && this.grab === null) this.drawHint(g, now);
-    if (this.grab !== null) { g.lineStyle(5, 0xffc933, 0.6 + 0.3 * Math.sin(now / 150)); g.strokeRoundedRect(x - b.w / 2 - 6, top - 6, b.w + 12, b.h + 12, 26); }
+    if (this.grab !== null) { g.lineStyle(5, 0xffc933, 0.6 + 0.3 * Math.sin(now / 150)); g.strokeRoundedRect(x - b.w / 2 - 6, b.y - b.h - 6, b.w + 12, b.h + 12, 26); }
   }
 
   /** 손바닥 힘 게이지: 막대가 차오르고 위쪽에 손바닥이 있다 */
+  /** 압력 계기: 구슬이 벽에 세게 부딪힐수록 바늘이 오른다(압력 증가). 가득 차면 완료. */
   private drawGauge(g: Phaser.GameObjects.Graphics, now: number) {
-    const { x, y, w, h } = this.L.gauge; const hand = this.L.hand; const k = this.shownGauge;
-    g.fillStyle(0x000000, 0.2); g.fillRoundedRect(x - w / 2 + 6, y + 8, w, h, 18);
-    g.fillStyle(0xfdfcf7, 1); g.fillRoundedRect(x - w / 2, y, w, h, 18); g.lineStyle(5, 0x546e7a, 1); g.strokeRoundedRect(x - w / 2, y, w, h, 18);
-    const fh = Math.max(0, (h - 16) * k);
-    const col = k < 0.5 ? 0x3fae6a : k < 0.8 ? 0xf2b84a : 0xe0513f;
-    g.fillStyle(col, 1); g.fillRoundedRect(x - w / 2 + 8, y + h - 8 - fh, w - 16, fh, 10);
-    for (let i = 1; i < 5; i++) { g.lineStyle(3, 0x546e7a, 0.5); g.lineBetween(x - w / 2 + 8, y + (h * i) / 5, x - w / 2 + 22, y + (h * i) / 5); }
-    // 손바닥: 게이지가 오를수록 붉어지고 떨린다
-    const sh = k > 0.6 ? Math.sin(now / 40) * (k - 0.6) * 8 : 0;
-    g.fillStyle(0x000000, 0.2); g.fillEllipse(hand.x + sh, hand.y + 74, 130, 20);
-    const tint = k < 0.5 ? 0xffffff : k < 0.8 ? 0xffc9b8 : 0xff9a88;
-    this.sp.palm.setPosition(hand.x + sh, hand.y + 18).setDisplaySize(120, 120 * (335 / 265)).setTint(tint);
+    const { x, y, w, h } = this.L.gauge; const k = this.shownGauge;
+    const size = Math.max(w, h * 0.7); const cx = x, cy = y + h / 2; const r = size / 2;
+    g.fillStyle(0x000000, 0.2); g.fillEllipse(cx, cy + r * 1.35, r * 1.8, 26);
+    this.sp.gauge.setPosition(cx, cy - r + (size * 1.228) / 2).setDisplaySize(size, size * 1.228);
+    g.lineStyle(4, 0x546e7a, 1);
+    for (let i = 0; i <= 10; i++) {
+      const a = ((-120 + (i / 10) * 240) * Math.PI) / 180; const r1 = r * 0.5, r2 = r * (i % 5 === 0 ? 0.68 : 0.62);
+      g.lineBetween(cx + Math.sin(a) * r1, cy - Math.cos(a) * r1, cx + Math.sin(a) * r2, cy - Math.cos(a) * r2);
+    }
+    const shake = k > 0.85 ? Math.sin(now / 35) * 2 : 0;
+    const na = ((-120 + k * 240) * Math.PI) / 180;
+    g.lineStyle(8, k < 0.8 ? 0xc0506a : 0xe0513f, 1); g.lineBetween(cx, cy, cx + Math.sin(na) * (r * 0.62) + shake, cy - Math.cos(na) * (r * 0.62));
+    g.fillStyle(0x546e7a, 1); g.fillCircle(cx, cy, 10);
   }
 
   /** 글 없는 안내: 병 위에서 좌우로 움직이는 손 모양과 화살표 */
