@@ -53,6 +53,8 @@ export class ClinicScene extends Phaser.Scene {
   private lastTick = 0;
   private finishTimer: number | null = null;
   private popAt: Record<number, number> = {};
+  private lastPistonVol = 0;
+  private lastPistonSound = 0;
   private lens!: LensView;
   private stepStartAt = 0;
 
@@ -69,7 +71,7 @@ export class ClinicScene extends Phaser.Scene {
     if (!patient || !data.experiments || !data.layout || !data.minigame) { this.scene.start('Backdrop'); return; }
     this.patient = patient; this.cfg = data.experiments; this.L = data.layout.clinic;
     this.limitMs = data.minigame.examTimeLimitMs; this.hintIdleMs = data.minigame.hintIdleMs; this.holdFinishMs = data.minigame.successHoldMs;
-    this.st = createExam(this.cfg, patient);
+    this.st = createExam(this.cfg, patient); this.lastPistonVol = this.cfg.syringe.start;
     this.lastActionAt = performance.now(); this.lastTick = performance.now();
     this.finishing = false; this.stepStartAt = performance.now(); this.popAt = {}; this.drag = null; this.shake = { piston: 0, dial: 0 };
 
@@ -208,6 +210,13 @@ export class ClinicScene extends Phaser.Scene {
     for (const e of r.events) this.onEvent(e);
     this.draw();
     this.lens.update(dt);
+    this.pistonSound();
+  }
+
+  /** 피스톤이 움직이는 동안 쉬익 소리(겹치지 않게 간격을 둔다) */
+  private pistonSound() {
+    const v = this.st.device.piston; const now = performance.now();
+    if (v !== this.lastPistonVol) { this.lastPistonVol = v; if (now - this.lastPistonSound > 160) { this.lastPistonSound = now; playSfx('piston'); } }
   }
 
   private say(text: string, ms = 2200) {
@@ -220,7 +229,7 @@ export class ClinicScene extends Phaser.Scene {
       playSfx('error'); this.cameras.main.shake(140, 0.004);
       if (dlg) this.say(dlg.hints.wrongGauge);
     } else if (e.type === 'reading') {
-      playSfx('correct'); this.popAt[e.volume] = performance.now();
+      playSfx('tick'); this.popAt[e.volume] = performance.now();
       const y = this.headY(e.volume); this.sparkle(this.L.barrel.x + this.L.barrel.w / 2 + 14, y, 6);
     } else if (e.type === 'step-done') {
       this.stepStartAt = performance.now(); playSfx('correct'); this.cameras.main.flash(160, 255, 255, 255, true);

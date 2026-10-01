@@ -4,7 +4,7 @@
  * 브라우저는 첫 사용자 입력 전 재생을 막으므로 실패는 조용히 무시하고, 첫 입력 때 unlockAudio()로 다시 시도한다.
  */
 export const BGM_SLOTS = ['title', 'play', 'ending'] as const;
-export const SFX_SLOTS = ['correct', 'error', 'success'] as const;
+export const SFX_SLOTS = ['correct', 'error', 'success', 'tick', 'piston', 'splash', 'collide', 'stamp', 'fanfare', 'launch'] as const;
 export type BgmSlot = (typeof BGM_SLOTS)[number];
 export type SfxSlot = (typeof SFX_SLOTS)[number];
 

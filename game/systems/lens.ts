@@ -4,6 +4,7 @@ import {
 } from '@/game/particles';
 import { checkLensObserved, deviceVolume } from '@/game/rules';
 import { addToDex } from '@/game/dex';
+import { playSfx } from '@/game/audio';
 import type { Device, Experiments, ParticleRule, Variable } from '@/game/types';
 
 interface Rect { x: number; y: number; w: number; h: number }
@@ -29,6 +30,7 @@ export class LensView {
   private ps: Particle[];
   private on = false;
   private drag: { x: number; y: number } | null = null;
+  private lastCollide = 0;
   private flashes: { x: number; y: number; t0: number; r: number }[] = [];
   private prev: { volume: number; tempStep: number } | null = null;
   private obs = { movingMs: 0, sinceMoveMs: 1e9 };
@@ -91,6 +93,7 @@ export class LensView {
     const op = currentOp(cfg, device, used); const emph = emphasis(this.o.rules, op);
     const bx = v.x + (v.w - box.w) / 2, by = v.y + v.h - 28 - box.h;   // 용기 바닥은 고정, 윗면(피스톤)이 움직인다
     const now = performance.now();
+    if (r.hits.length && now - this.lastCollide > 140) { this.lastCollide = now; playSfx('collide'); }
     for (const h of r.hits) this.flashes.push({ x: bx + h.x, y: by + h.y, t0: now, r: 16 * (emph.strength ? speedFactor(device) : 1) });
     this.flashes = this.flashes.filter(f => now - f.t0 < 260).slice(-40);
 

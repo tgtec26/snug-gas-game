@@ -34,6 +34,8 @@ function Diagnosis({ patient }: { patient: Patient }) {
     addToDex('laws', law);
     addToDex('people', law);
     playSfx('success');
+    const t = window.setTimeout(() => playSfx('stamp'), 650);   // 도장이 쿵 찍히는 순간
+    return () => window.clearTimeout(t);
   }, [patient.id, law]);
 
   const go = useCallback(() => { if (!locked) next(); }, [locked, next]);

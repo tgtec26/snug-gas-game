@@ -85,3 +85,8 @@
 - 요약 `SummaryOverlay`(phase `result`): 별 합계, 치료한 환자 수, 잘못 돌린 조절기 횟수, 이번 판에 새로 얻은 카드(`dex.freshCards`), 진료 차트 2줄, 도감 진행률, **나의 결과 내려받기**(`html-to-image` PNG; CSS 패널이라 border-image 문제 없음), 진료 기록부, 다시 하기(기록만 지우고 도감 유지), 처음으로. 숫자는 순수 함수 `game/summary.ts`.
 - 도감 `DexOverlay`(`game/ui.ts`의 `useUI`로 열고 닫음, 타이틀과 요약에서 연다, Esc로 닫음): 증상 카드 8, 법칙 도장 2, 입자 카드 2, 인물 카드 2(`people.json`: 교과서에 적힌 내용만), 잠긴 숙제 카드 5(`homework-cards.json`: 제목·쪽수만, 검증기가 답 필드를 막는다). 법칙 도장을 얻으면 인물 카드도 열린다.
 - 확인: `pnpm test` 176개, typecheck, lint 통과. 1280×800 브라우저에서 ending → 키보드 연타 → 발사 → 별 카운트업(12) → 요약 팝업, PNG 생성(147KB), 도감 열기·Esc, 다시 하기(phase clinic, 기록 삭제, 도감 유지) 확인. 터치·소리·실제 다운로드 저장은 확인 못 함(PNG는 데이터 URL 생성까지만).
+
+## 2026-10-01 Task 15: 효과음 7종·성공 피드백·입력 견고성
+- 새 효과음 `tick/piston/splash/collide/stamp/fanfare/launch`를 로컬 오디오 스튜디오로 생성해 `public/assets/audio/gas_*.mp3`로 두고 `audio-config.json`에 등록(없는 슬롯이 있으면 로딩 오류 화면이 뜨는 것도 확인). 눈금 딸깍은 `tick`, 피스톤 이동은 `piston`(160ms 간격), 물에 담그기·빼기는 `splash`, 입자·구슬 충돌은 `collide`(간격 제한), 도장은 `stamp`, 구슬 흔들기 완료·피날레 폭발은 `fanfare`, 로켓은 `launch`.
+- 점검 기록은 `docs/principles-check.md`. 인트로 Enter 15회 연타 확인, 나머지는 스토어 테스트와 이전 태스크의 브라우저 확인에 근거.
+- **소리를 귀로 확인하지 못했다.** 시드 하나로 한 번 만든 결과이고 이 맥의 ffmpeg가 깨져 있어 soundfile로 mp3를 만들었다. 어색하면 다시 만들 것.

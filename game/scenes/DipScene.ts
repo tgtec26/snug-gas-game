@@ -30,6 +30,7 @@ export class DipScene extends Phaser.Scene {
   private worn: Gear[] = [];
   private gearRefused = 0;
   private prevBlocked = false;
+  private prevSubmerged = false;
   private submergeSince = 0;
   private submergeHinted = false;
   private limitMs = 60000;
@@ -64,7 +65,7 @@ export class DipScene extends Phaser.Scene {
     this.limitMs = data.minigame.examTimeLimitMs; this.hintIdleMs = data.minigame.hintIdleMs; this.holdFinishMs = data.minigame.successHoldMs;
     this.st = createExam(this.cfg, patient);
     this.target = { x: this.L.syringe.x, y: this.L.syringe.y };
-    this.worn = inEmergency() ? [...GEARS] : []; this.gearRefused = 0; this.prevBlocked = false; this.submergeSince = 0; this.submergeHinted = false;
+    this.worn = inEmergency() ? [...GEARS] : []; this.gearRefused = 0; this.prevBlocked = false; this.prevSubmerged = false; this.submergeSince = 0; this.submergeHinted = false;
     this.drag = null; this.finishing = false; this.shakeUntil = { hot: 0, cold: 0 };
     this.lastActionAt = performance.now(); this.lastTick = performance.now(); this.stepStartAt = performance.now();
     this.res = resolveSyringe(this.L, this.cfg, this.worn, this.target.x, this.target.y);
@@ -173,6 +174,7 @@ export class DipScene extends Phaser.Scene {
       if (dlg) this.say(dlg.hints.gear);
     }
     this.prevBlocked = r.blockedGear;
+    if (r.submerged !== this.prevSubmerged) { this.prevSubmerged = r.submerged; playSfx('splash'); }
     if (r.beaker && !r.submerged) {
       if (!this.submergeSince) this.submergeSince = now;
       else if (!this.submergeHinted && now - this.submergeSince > 1800 && dlg) { this.submergeHinted = true; this.say(dlg.hints.submerge); }

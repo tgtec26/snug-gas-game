@@ -1,6 +1,21 @@
 {
   "bgmVolume": 0.4,
   "sfxVolume": 0.7,
-  "bgm": { "title": "start_ending", "play": "quiz-background", "ending": "start_ending" },
-  "sfx": { "correct": "correct", "error": "error", "success": "success" }
+  "bgm": {
+    "title": "start_ending",
+    "play": "quiz-background",
+    "ending": "start_ending"
+  },
+  "sfx": {
+    "correct": "correct",
+    "error": "error",
+    "success": "success",
+    "tick": "gas_tick",
+    "piston": "gas_piston",
+    "splash": "gas_splash",
+    "collide": "gas_collide",
+    "stamp": "gas_stamp",
+    "fanfare": "gas_fanfare",
+    "launch": "gas_launch"
+  }
 }

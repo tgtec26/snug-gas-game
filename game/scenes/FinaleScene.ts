@@ -101,7 +101,7 @@ export class FinaleScene extends Phaser.Scene {
     if (this.stage !== 'pump') return;
     this.stage = 'launch'; this.t0 = performance.now(); this.rocketT = 0;
     this.apexY = 330 - this.charge * 240;   // 많이 누를수록 높이 올라간다 (항상 위쪽 하늘로)
-    playSfx('success', 1.2);
+    playSfx('launch');
     this.cameras.main.shake(160, 0.004);
   }
 
@@ -124,7 +124,7 @@ export class FinaleScene extends Phaser.Scene {
   /** 빛 폭발과 파티클, 팡파르 */
   private boom(quiet: boolean) {
     this.cameras.main.flash(260, 255, 255, 255, true);
-    if (!quiet) playSfx('success', 1);
+    if (!quiet) playSfx('fanfare');
     const cx = PAD.x + 60 * 0, cy = Math.max(this.apexY, 100);
     for (let i = 0; i < 70; i++) {
       const a = Math.random() * Math.PI * 2; const d = 120 + Math.random() * 380;

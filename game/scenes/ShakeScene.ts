@@ -98,7 +98,7 @@ export class ShakeScene extends Phaser.Scene {
     this.st = this.doneAt ? { ...r.state, gauge: 1 } : r.state;
     if (!this.doneAt) {
       for (const h of r.hits.slice(0, 10)) this.flashes.push({ x: h.x, y: h.y, t0: now });
-      if (r.hits.length && now - this.lastSound > SOUND_GAP_MS) { this.lastSound = now; playSfx('correct'); }
+      if (r.hits.length && now - this.lastSound > SOUND_GAP_MS) { this.lastSound = now; playSfx('collide'); }
       if (this.st.gauge >= 1) this.complete();
     }
     this.flashes = this.flashes.filter(f => now - f.t0 < 220).slice(-40);
@@ -108,7 +108,7 @@ export class ShakeScene extends Phaser.Scene {
 
   private complete() {
     this.doneAt = performance.now(); this.grab = null;
-    playSfx('success'); this.cameras.main.flash(200, 255, 255, 255, true); this.cameras.main.shake(180, 0.006);
+    playSfx('fanfare'); this.cameras.main.flash(200, 255, 255, 255, true); this.cameras.main.shake(180, 0.006);
     for (let i = 0; i < 30; i++) {
       const a = (i / 30) * Math.PI * 2; const d = 120 + Math.random() * 160;
       const c = this.add.circle(this.L.gauge.x, this.L.gauge.y + this.L.gauge.h / 2, 6 + Math.random() * 6, [0xffe28a, 0xffffff, 0x8fe3c0][i % 3]).setDepth(40);
@@ -127,7 +127,7 @@ export class ShakeScene extends Phaser.Scene {
     this.card = this.add.container(640, 360, [panel, stamp, line, arrow]).setDepth(30).setScale(0.2).setAlpha(0);
     this.tweens.add({ targets: this.card, scale: 1, alpha: 1, duration: 320, ease: 'Back.Out' });
     stamp.setScale(2.4).setAlpha(0);
-    this.tweens.add({ targets: stamp, scale: 1, alpha: 1, duration: 260, delay: 340, ease: 'Back.In' });
+    this.tweens.add({ targets: stamp, scale: 1, alpha: 1, duration: 260, delay: 340, ease: 'Back.In', onComplete: () => { playSfx('stamp'); this.cameras.main.shake(120, 0.005); } });
   }
 
   // ── 그리기 ──────────────────────────────────────────────────
