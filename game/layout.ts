@@ -8,6 +8,7 @@ export interface ClinicLayout {
   dial: { x: number; y: number; r: number };
   patient: { x: number; y: number; size: number };
   reset: { x: number; y: number };
+  graph: { x: number; y: number; w: number; h: number };
 }
 export interface Layout { clinic: ClinicLayout }
 
@@ -23,6 +24,7 @@ const REQUIRED: Record<keyof ClinicLayout, string[]> = {
   dial: ['x', 'y', 'r'],
   patient: ['x', 'y', 'size'],
   reset: ['x', 'y'],
+  graph: ['x', 'y', 'w', 'h'],
 };
 
 /** 오류 문자열 목록. 좌표는 무대 안, 크기는 0보다 커야 하고, 통이 주사기를 감싸야 한다. */

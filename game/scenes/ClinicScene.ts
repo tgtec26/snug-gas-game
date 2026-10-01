@@ -7,7 +7,7 @@ import { playSfx } from '@/game/audio';
 import {
   createExam, movePiston, moveTemp, resetDevice, tickExam, examResult, type ExamState, type ExamEvent,
 } from '@/game/exam';
-import { deviceVolume, heldConstant, needleFromVolume, pressureReading, stepTargetVolume, badgeText } from '@/game/rules';
+import { checkPistonRun, deviceVolume, heldConstant, needleFromVolume, pressureReading, stepTargetVolume, badgeText } from '@/game/rules';
 import type { Experiments, Patient } from '@/game/types';
 import type { ClinicLayout } from '@/game/layout';
 
@@ -50,6 +50,7 @@ export class ClinicScene extends Phaser.Scene {
   private finishing = false;
   private lastTick = 0;
   private finishTimer: number | null = null;
+  private popAt: Record<number, number> = {};
 
   constructor() { super({ key: 'Clinic' }); }
 
@@ -66,7 +67,7 @@ export class ClinicScene extends Phaser.Scene {
     this.limitMs = data.minigame.examTimeLimitMs; this.hintIdleMs = data.minigame.hintIdleMs; this.holdFinishMs = data.minigame.successHoldMs;
     this.st = createExam(this.cfg, patient);
     this.lastActionAt = performance.now(); this.lastTick = performance.now();
-    this.finishing = false; this.drag = null; this.shake = { piston: 0, dial: 0 };
+    this.finishing = false; this.popAt = {}; this.drag = null; this.shake = { piston: 0, dial: 0 };
 
     this.g = this.add.graphics().setDepth(10);
     const key = `patient_${patient.id}_ph`;
@@ -132,7 +133,9 @@ export class ClinicScene extends Phaser.Scene {
   }
 
   // ── 입력 ────────────────────────────────────────────────────
-  private locked(variable: 'pressure' | 'temperature') { return heldConstant(this.cfg, this.st.device) === variable; }
+  private locked(variable: 'pressure' | 'temperature') {
+    return heldConstant(this.cfg, this.st.device) === variable || (variable === 'temperature' && !this.st.tempOpen);
+  }
   /** 조작이 있었음을 기록한다. 한 줄 힌트는 조작이 이어져도 읽을 수 있게 시간이 지나야 꺼진다. */
   private act() { this.lastActionAt = performance.now(); }
 
@@ -205,6 +208,9 @@ export class ClinicScene extends Phaser.Scene {
     if (e.type === 'wrong-gauge') {
       playSfx('error'); this.cameras.main.shake(140, 0.004);
       if (dlg) this.say(dlg.hints.wrongGauge);
+    } else if (e.type === 'reading') {
+      playSfx('correct'); this.popAt[e.volume] = performance.now();
+      const y = this.headY(e.volume); this.sparkle(this.L.barrel.x + this.L.barrel.w / 2 + 14, y, 6);
     } else if (e.type === 'step-done') {
       playSfx('correct'); this.cameras.main.flash(160, 255, 255, 255, true);
       this.tweens.add({ targets: this.previewImg, scale: this.previewImg.scale * 1.12, yoyo: true, duration: 140 });
@@ -213,7 +219,7 @@ export class ClinicScene extends Phaser.Scene {
       this.finishing = true; playSfx('success'); this.sparkle(this.L.patient.x, this.L.patient.y, 26);
       this.finishTimer = window.setTimeout(() => {
         this.finishTimer = null;
-        useGame.getState().completeExam(this.patient.id, examResult(this.st, this.patient, this.limitMs, false));
+        useGame.getState().completeExam(this.patient.id, examResult(this.st, this.patient, this.limitMs, this.patient.kind === 'measure' && checkPistonRun(this.cfg, this.st.readings).complete));
       }, this.holdFinishMs);
     }
   }
@@ -300,11 +306,51 @@ export class ClinicScene extends Phaser.Scene {
 
     this.drawGauge(g);
     this.drawThermo(g);
-    this.drawDial(g, held === 'temperature', now);
+    this.drawDial(g, held === 'temperature' || !st.tempOpen, now);
+    if (this.st.snap) { this.drawReadMarks(g, now); this.drawGraph(g, now); }
     this.drawReset(g);
     this.updatePatient(vol, now);
     this.drawBadgesAndHand(g, held, now);
     if (this.hintText.alpha > 0 && now > this.hintUntil) this.hintText.setAlpha(0);
+  }
+
+  /** 눈금 읽기 표시: 읽은 눈금은 초록 점, 안 읽은 눈금은 노랗게 반짝, 머무는 눈금은 차오르는 고리 */
+  private drawReadMarks(g: Phaser.GameObjects.Graphics, now: number) {
+    const b = this.L.barrel; const m = this.cfg.measure; const x = b.x + b.w / 2 + 34;
+    const cur = this.st.device.piston;
+    for (let v = m.from; v >= m.to; v--) {
+      const r = this.st.readings.find(q => q.volume === v);
+      const read = !!r && r.dwellMs >= m.dwellMs; const y = this.headY(v);
+      const pop = now - (this.popAt[v] ?? -1e9); const k = pop < 350 ? 1 + 0.7 * Math.sin((pop / 350) * Math.PI) : 1;
+      if (read) { g.fillStyle(0x3fae6a, 1); g.fillCircle(x, y, 7 * k); g.lineStyle(2, 0x1f6b3d, 1); g.strokeCircle(x, y, 7 * k); }
+      else { g.fillStyle(0xffc933, 0.45 + 0.4 * Math.sin(now / 240 + v)); g.fillCircle(x, y, 6); }
+      if (v === cur && this.st.device.tempStep === 0 && !read && r) {
+        g.lineStyle(4, 0x3fae6a, 1); g.beginPath();
+        g.arc(x, y, 12, -Math.PI / 2, -Math.PI / 2 + Math.min(1, r.dwellMs / m.dwellMs) * Math.PI * 2, false); g.strokePath();
+      }
+    }
+  }
+
+  /** 작은 그래프: 눈금을 읽을 때마다 점이 하나씩 찍힌다. 가로 = 부피 눈금, 세로 = 바늘의 상대 높이(수치 없음). */
+  private drawGraph(g: Phaser.GameObjects.Graphics, now: number) {
+    const { x, y, w, h } = this.L.graph; const m = this.cfg.measure;
+    const lo = needleFromVolume(m.from, this.cfg.syringe.start), hi = needleFromVolume(m.to, this.cfg.syringe.start);
+    const px = (v: number) => x + 22 + ((v - m.to) / (m.from - m.to)) * (w - 44);
+    const py = (n: number) => y + h - 24 - ((n - lo) / (hi - lo)) * (h - 52);
+    g.fillStyle(0x000000, 0.2); g.fillRoundedRect(x + 6, y + 8, w, h, 12);
+    g.fillStyle(0xfdfcf7, 0.96); g.fillRoundedRect(x, y, w, h, 12); g.lineStyle(3, 0x546e7a, 1); g.strokeRoundedRect(x, y, w, h, 12);
+    g.lineStyle(3, 0x546e7a, 1); g.lineBetween(x + 12, y + 12, x + 12, y + h - 12); g.lineBetween(x + 12, y + h - 12, x + w - 12, y + h - 12);
+    const pts = this.st.readings.filter(r => r.dwellMs >= m.dwellMs).sort((a, b) => b.volume - a.volume)
+      .map(r => ({ v: r.volume, X: px(r.volume), Y: py(needleFromVolume(r.volume, this.cfg.syringe.start)) }));
+    if (pts.length > 1) {
+      g.lineStyle(3, 0xc0506a, 0.5); g.beginPath(); g.moveTo(pts[0].X, pts[0].Y);
+      for (const p of pts.slice(1)) g.lineTo(p.X, p.Y);
+      g.strokePath();
+    }
+    for (const p of pts) {
+      const pop = now - (this.popAt[p.v] ?? -1e9); const k = pop < 350 ? 1 + 0.9 * Math.sin((pop / 350) * Math.PI) : 1;
+      g.fillStyle(0xc0506a, 1); g.fillCircle(p.X, p.Y, 6 * k); g.lineStyle(2, 0x6b1f30, 1); g.strokeCircle(p.X, p.Y, 6 * k);
+    }
   }
 
   private drawGauge(g: Phaser.GameObjects.Graphics) {

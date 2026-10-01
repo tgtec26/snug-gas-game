@@ -3,7 +3,7 @@ import experiments from '../public/data/experiments.json';
 import patients from '../public/data/patients.json';
 import minigame from '../public/data/minigame-config.json';
 import type { Experiments, Patient } from '../game/types';
-import { stepTargetVolume, heldConstant } from '../game/rules';
+import { stepTargetVolume, heldConstant, checkPistonRun } from '../game/rules';
 import {
   createExam, movePiston, moveTemp, resetDevice, tickExam, examResult, validateMinigame,
   type ExamState, type ExamEvent, type MinigameConfig,
@@ -35,6 +35,11 @@ describe('올바른 조절기로 끝까지 재현', () => {
       let s = createExam(cfg, p);
       const all: ExamEvent[] = [];
       for (let i = 0; i < p.steps.length; i++) {
+        if (p.kind === 'measure' && i === 0) {   // 측정 진료는 눈금을 하나씩 읽고 내려가야 한다
+          for (let v = cfg.measure.from; v > cfg.measure.to; v--) {
+            const r = run(p, movePiston(cfg, s, v), cfg.measure.dwellMs + 100); s = r.s; all.push(...r.events);
+          }
+        }
         s = reproduce(p, s, i);
         const r = run(p, s, cfg.holdMs + 200); s = r.s; all.push(...r.events);
       }
@@ -162,4 +167,49 @@ describe('끝난 뒤와 제한 시간', () => {
 describe('minigame-config.json', () => {
   it('오류가 없다', () => { expect(validateMinigame(mg)).toEqual([]); });
   it('0 이하 값은 잡는다', () => { expect(validateMinigame({ ...mg, examTimeLimitMs: 0 }).join()).toContain('examTimeLimitMs'); });
+});
+
+describe('측정 진료: 고무공 눈금 읽기', () => {
+  const ball = byId('rubberball');
+  const pressTo = (st: ExamState, v: number, dwell: number) => run(ball, movePiston(cfg, st, v), dwell);
+
+  it('피스톤은 1 mL 눈금에 딸깍 멈추고 온도 다이얼은 열리지 않는다', () => {
+    let s = createExam(cfg, ball);
+    s = movePiston(cfg, s, 17.4);
+    expect(s.device.piston).toBe(17);
+    const t = moveTemp(cfg, createExam(cfg, ball), 2);
+    expect(t.device.tempStep).toBe(0);
+    expect(moveTemp(cfg, createExam(cfg, byId('snackbag')), 2).device.tempStep).toBe(2);
+  });
+
+  it('눈금마다 머물면 reading 이벤트가 한 번씩 나오고 checkPistonRun이 완료된다', () => {
+    let s = createExam(cfg, ball);
+    const vols: number[] = [];
+    for (let v = 20; v >= 12; v--) {
+      const r = pressTo(s, v, cfg.measure.dwellMs + 100); s = r.s;
+      vols.push(...r.events.filter(e => e.type === 'reading').map(e => (e as { volume: number }).volume));
+    }
+    expect(vols).toEqual([20, 19, 18, 17, 16, 15, 14, 13, 12]);
+    expect(checkPistonRun(cfg, s.readings).complete).toBe(true);
+  });
+
+  it('12 mL로 바로 끌면 오래 머물러도 재현이 아니다 (눈금 건너뛰기 없음)', () => {
+    const r = pressTo(createExam(cfg, ball), 12, cfg.holdMs + 2000);
+    expect(r.events.some(e => e.type === 'step-done')).toBe(false);
+    expect(checkPistonRun(cfg, r.s.readings).missing.length).toBeGreaterThan(0);
+  });
+
+  it('끝까지 읽은 뒤 12 mL에 머물면 cause 완료, 이어 당기면 explore 완료', () => {
+    let s = createExam(cfg, ball);
+    for (let v = 20; v >= 12; v--) s = pressTo(s, v, cfg.measure.dwellMs + 100).s;
+    const r = run(ball, s, cfg.holdMs + 200);
+    expect(r.events.some(e => e.type === 'step-done')).toBe(true);
+    const r2 = pressTo(r.s, 28, cfg.holdMs + 200);
+    expect(r2.events.some(e => e.type === 'all-done')).toBe(true);
+  });
+
+  it('측정이 아닌 진료는 눈금 기록이 없다', () => {
+    const s = run(byId('snackbag'), createExam(cfg, byId('snackbag')), 1000).s;
+    expect(s.readings).toEqual([]);
+  });
 });
