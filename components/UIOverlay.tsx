@@ -10,6 +10,7 @@ import { IntroOverlay } from '@/components/overlays/IntroOverlay';
 import { ClinicOverlay } from '@/components/overlays/ClinicOverlay';
 import { StoryOverlay } from '@/components/overlays/StoryOverlay';
 import { DiagnosisOverlay } from '@/components/overlays/DiagnosisOverlay';
+import { EmergencyOverlay } from '@/components/overlays/EmergencyOverlay';
 import { useGame } from '@/game/store';
 import type { Phase } from '@/game/types';
 
@@ -25,7 +26,7 @@ export const OVERLAYS: Record<Phase, ComponentType> = {
   story: StoryOverlay,
   exam: Pending,        // Task 7~11
   diagnosis: DiagnosisOverlay,
-  emergency: Pending,   // Task 13
+  emergency: EmergencyOverlay,
   ending: Pending,      // Task 14
   result: Pending,      // Task 14
 };

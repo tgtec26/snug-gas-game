@@ -58,10 +58,12 @@ export function stopBgm() {
   current = null;
 }
 
-export function playSfx(slot: SfxSlot) {
+/** rate가 1보다 크면 음이 높아진다(콤보가 쌓일수록 올라가는 소리). */
+export function playSfx(slot: SfxSlot, rate = 1) {
   if (typeof window === 'undefined' || muted || !config) return;
   const el = new Audio(`/assets/audio/${config.sfx[slot]}.mp3`);
   el.volume = config.sfxVolume;
+  if (rate !== 1) { el.preservesPitch = false; el.playbackRate = rate; }
   safePlay(el);
 }
 

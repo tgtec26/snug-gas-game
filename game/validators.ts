@@ -32,7 +32,7 @@ export function validateDataset(d: Dataset): string[] {
     p.steps.forEach((s, i) => {
       if (!(s.size > 0)) errs.push(`${p.id}: step ${i} size는 0보다 커야 한다`);
       if (p.variable === 'temperature' && s.size > Math.min(d.experiments.temp.maxStep, -d.experiments.temp.minStep)) errs.push(`${p.id}: step ${i} 온도 단계가 범위 밖`);
-      if (p.kind === 'dip') {
+      if (p.kind === 'dip' || p.rig === 'dip') {
         const want = s.change === 'up' ? d.experiments.dip.hotStep : -d.experiments.dip.coldStep;
         if (s.size !== want) errs.push(`${p.id}: step ${i} 온도 단계가 ${s.change === 'up' ? '뜨거운' : '얼음'}물의 단계(${want})와 다르다`);
       }

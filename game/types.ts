@@ -18,6 +18,7 @@ export interface Patient {
   scene: string;             // 사연 장면 id (글 없음)
   gauge: 'pressure-sensor' | 'thermometer';
   pages: number[];           // 교과서 쪽
+  rig?: 'dip';               // 응급실에서 쓰는 장치: 있으면 담그기 장치(DipScene), 없으면 주사기·다이얼(ClinicScene)
   verified: boolean;
   steps: PatientStep[];
 }

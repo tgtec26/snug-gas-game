@@ -17,13 +17,14 @@ export function StoryOverlay() {
   const phase = useGame(s => s.phase);
   const id = useGame(s => s.currentId);
   const patient = useDataStore(s => s.patients.find(p => p.id === id));
+  const finishStory = useGame(s => s.finishStory);
   if (phase !== 'story' || !patient) return null;
-  return <Story key={patient.id} patient={patient} />;
+  return <Story key={patient.id} patient={patient} endMs={END_MS} onDone={finishStory} />;
 }
 
 /** 글 없는 사연 장면: 계기 바늘·눈금이 움직이고 환자 모양이 변한다. 잠금(0.7초) 뒤에는 탭·Enter·Space로 건너뛴다. */
-function Story({ patient }: { patient: Patient }) {
-  const finishStory = useGame(s => s.finishStory);
+export function Story({ patient, endMs, onDone }: { patient: Patient; endMs: number; onDone: () => void }) {
+  const finishStory = onDone;
   const locked = useLock(700);
   const plan = storyPlan(patient);
   const [value, setValue] = useState(plan.from);
@@ -31,9 +32,9 @@ function Story({ patient }: { patient: Patient }) {
 
   useEffect(() => {
     const a = setTimeout(() => { setValue(plan.to); setMoved(true); }, START_MS);
-    const b = setTimeout(() => finishStory(), END_MS);
+    const b = setTimeout(() => finishStory(), endMs);
     return () => { clearTimeout(a); clearTimeout(b); };
-  }, [plan.to, finishStory]);
+  }, [plan.to, finishStory, endMs]);
 
   const skip = useCallback(() => { if (!locked) finishStory(); }, [locked, finishStory]);
   useEffect(() => {

@@ -18,7 +18,7 @@ describe('검사 장치 씬', () => {
   it('exam은 Clinic, tutorial은 Shake, 나머지는 Backdrop (응급실은 Task 13 전까지 Backdrop)', () => {
     expect(sceneFor('exam')).toBe('Clinic');
     expect(sceneFor('tutorial')).toBe('Shake');
-    for (const p of PHASES.filter(x => x !== 'exam' && x !== 'tutorial')) expect(sceneFor(p), p).toBe('Backdrop');
+    for (const p of PHASES.filter(x => x !== 'exam' && x !== 'tutorial' && x !== 'emergency')) expect(sceneFor(p), p).toBe('Backdrop');
   });
 });
 
@@ -27,6 +27,13 @@ describe('담그기 진료 씬', () => {
     expect(sceneFor('exam', 'dip')).toBe('Dip');
     expect(sceneFor('exam', 'redo')).toBe('Clinic');
     expect(sceneFor('diagnosis', 'dip')).toBe('Backdrop');
+  });
+});
+
+describe('응급실 씬', () => {
+  it('담그기 장치 환자는 Dip, 나머지는 Clinic', () => {
+    expect(sceneFor('emergency', 'emergency', 'dip')).toBe('Dip');
+    expect(sceneFor('emergency', 'emergency')).toBe('Clinic');
   });
 });
 

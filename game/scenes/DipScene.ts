@@ -8,12 +8,13 @@ import { createExam, tickExam, examResult, type ExamState, type ExamEvent } from
 import { resolveSyringe, stepDip, waterTopY, type DipResolved, type Beaker } from '@/game/dip';
 import { deviceVolume, stepTargetVolume } from '@/game/rules';
 import { LensView } from '@/game/systems/lens';
+import { inEmergency, roundBlocked, comboRate } from '@/game/systems/emergencyRound';
 import type { Experiments, Patient } from '@/game/types';
 import type { DipLayout, ClinicLayout } from '@/game/layout';
 
 const MAX_FRAME_MS = 200;
 const KEY_STEP = 30;
-const BARREL_LEN = 210;          // 주사기 통 길이(노즐 위쪽)
+const BARREL_LEN = 160;          // 주사기 통 길이(노즐 위쪽)
 const GEARS = ['gloves', 'goggles'] as const;
 type Gear = (typeof GEARS)[number];
 
@@ -63,7 +64,7 @@ export class DipScene extends Phaser.Scene {
     this.limitMs = data.minigame.examTimeLimitMs; this.hintIdleMs = data.minigame.hintIdleMs; this.holdFinishMs = data.minigame.successHoldMs;
     this.st = createExam(this.cfg, patient);
     this.target = { x: this.L.syringe.x, y: this.L.syringe.y };
-    this.worn = []; this.gearRefused = 0; this.prevBlocked = false; this.submergeSince = 0; this.submergeHinted = false;
+    this.worn = inEmergency() ? [...GEARS] : []; this.gearRefused = 0; this.prevBlocked = false; this.submergeSince = 0; this.submergeHinted = false;
     this.drag = null; this.finishing = false; this.shakeUntil = { hot: 0, cold: 0 };
     this.lastActionAt = performance.now(); this.lastTick = performance.now(); this.stepStartAt = performance.now();
     this.res = resolveSyringe(this.L, this.cfg, this.worn, this.target.x, this.target.y);
@@ -86,7 +87,7 @@ export class DipScene extends Phaser.Scene {
 
     // 키보드: 방향키로 주사기를 옮기고 G로 장비를 하나씩 착용. 자동 반복(e.repeat)은 무시.
     const onKey = (e: KeyboardEvent) => {
-      if (e.repeat || this.st.done) return;
+      if (e.repeat || this.st.done || roundBlocked()) return;
       const move = (dx: number, dy: number) => { e.preventDefault(); this.target = { x: this.target.x + dx, y: this.target.y + dy }; this.act(); };
       if (e.key === 'ArrowUp') move(0, -KEY_STEP);
       else if (e.key === 'ArrowDown') move(0, KEY_STEP);
@@ -121,7 +122,7 @@ export class DipScene extends Phaser.Scene {
   }
 
   private onDown(p: Phaser.Input.Pointer) {
-    if (this.st.done) return;
+    if (this.st.done || roundBlocked()) return;
     const x = p.worldX, y = p.worldY;
     for (const g of GEARS) {
       if (this.worn.includes(g)) continue;
@@ -184,9 +185,10 @@ export class DipScene extends Phaser.Scene {
       this.tweens.add({ targets: this.previewImg, scale: this.previewImg.scale * 1.12, yoyo: true, duration: 140 });
       this.sparkle(this.PL.x, this.PL.y, 14);
     } else if (e.type === 'all-done' && !this.finishing) {
-      this.finishing = true; playSfx('success'); this.sparkle(this.PL.x, this.PL.y, 26);
+      this.finishing = true; playSfx('success', inEmergency() ? comboRate() : 1); this.sparkle(this.PL.x, this.PL.y, 26);
       this.finishTimer = window.setTimeout(() => {
         this.finishTimer = null;
+        if (inEmergency()) { useGame.getState().recordRound(this.patient.id, true); return; }
         useGame.getState().completeExam(this.patient.id, examResult(this.st, this.patient, this.limitMs, this.gearRefused === 0));
       }, this.holdFinishMs);
     }
@@ -314,7 +316,7 @@ export class DipScene extends Phaser.Scene {
     g.fillStyle(0xbfe6f7, 0.8); g.fillRect(r.x - s.w / 2 + 4, gasTop, s.w - 8, bodyBottom - gasTop);
     g.lineStyle(3, 0x607d8b, 1); g.strokeRect(r.x - s.w / 2, top, s.w, BARREL_LEN);
     g.lineStyle(2, 0x455a64, 0.9);
-    for (let i = 0; i <= 14; i++) g.lineBetween(r.x + s.w / 2, bodyBottom - i * (BARREL_LEN / 14), r.x + s.w / 2 + (i % 2 === 0 ? 14 : 8), bodyBottom - i * (BARREL_LEN / 14));
+    for (let i = 0; i <= 16; i++) g.lineBetween(r.x + s.w / 2, bodyBottom - i * (BARREL_LEN / 16), r.x + s.w / 2 + (i % 2 === 0 ? 14 : 8), bodyBottom - i * (BARREL_LEN / 16));
     // 노즐
     g.fillStyle(0x90a4ae, 1); g.fillRect(r.x - 7, bodyBottom, 14, s.nozzle);
     // 피스톤: 머리 + 막대 + 손잡이

@@ -1,14 +1,15 @@
 import type * as Phaser from 'phaser';
 import { useGame } from '@/game/store';
 import { useDataStore } from '@/game/dataStore';
-import type { Kind, Phase } from '@/game/types';
+import type { Kind, Phase, Patient } from '@/game/types';
 
 /** 등록된 씬 키. 태스크가 진행되며 Clinic(Task 7), Shake(Task 12), Finale(Task 14)이 더해진다. */
 export type SceneKey = 'Backdrop' | 'Clinic' | 'Dip' | 'Shake';
 
 /** phase → 씬. 검사(exam)는 검사 장치 씬, 나머지 오버레이 위주 phase는 대기실 배경 씬. */
-export function sceneFor(phase: Phase, kind?: Kind): SceneKey {
+export function sceneFor(phase: Phase, kind?: Kind, rig?: Patient['rig']): SceneKey {
   if (phase === 'tutorial') return 'Shake';
+  if (phase === 'emergency') return rig === 'dip' ? 'Dip' : 'Clinic';
   if (phase !== 'exam') return 'Backdrop';
   return kind === 'dip' ? 'Dip' : 'Clinic';
 }
@@ -16,7 +17,8 @@ export function sceneFor(phase: Phase, kind?: Kind): SceneKey {
 /** 지금 진료 중인 환자의 종류까지 보고 고른 씬 */
 export function currentScene(phase: Phase): SceneKey {
   const id = useGame.getState().currentId;
-  return sceneFor(phase, useDataStore.getState().patients.find(p => p.id === id)?.kind);
+  const p = useDataStore.getState().patients.find(x => x.id === id);
+  return sceneFor(phase, p?.kind, p?.rig);
 }
 
 /**
@@ -31,7 +33,11 @@ export function attachRouter(scene: Phaser.Scene) {
     unsub(); scene.scene.start(target);
     return true;
   };
-  const unsub = useGame.subscribe((s, prev) => { if (s.phase !== prev.phase) go(s.phase); });
+  const unsub = useGame.subscribe((s, prev) => {
+    if (s.phase !== prev.phase) go(s.phase);
+    // 응급실은 라운드마다 환자가 바뀐다: 같은 씬이어도 새 환자로 다시 시작한다
+    else if (s.phase === 'emergency' && s.currentId !== prev.currentId && s.currentId && !go(s.phase)) { unsub(); scene.scene.restart(); }
+  });
   scene.events.once('shutdown', unsub);
   go(useGame.getState().phase);
   return unsub;

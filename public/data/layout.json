@@ -68,27 +68,27 @@
   "dip": {
     "hot": {
       "x": 330,
-      "top": 330,
-      "bottom": 620,
+      "top": 400,
+      "bottom": 650,
       "w": 220
     },
     "cold": {
       "x": 720,
-      "top": 330,
-      "bottom": 620,
+      "top": 400,
+      "bottom": 650,
       "w": 220
     },
     "waterInset": 50,
     "syringe": {
       "x": 530,
-      "y": 400,
+      "y": 370,
       "w": 64,
-      "pxPerMl": 6,
+      "pxPerMl": 5,
       "nozzle": 22,
       "minX": 170,
       "maxX": 900,
       "minY": 150,
-      "maxY": 610
+      "maxY": 640
     },
     "person": {
       "x": 1030,

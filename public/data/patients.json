@@ -7,7 +7,7 @@
     "steps": [ { "change": "down", "size": 3, "role": "cause" }, { "change": "up", "size": 3, "role": "explore" } ] },
   { "id": "soccerball", "name": "축구공", "kind": "redo", "variable": "temperature", "scene": "winter-field", "gauge": "thermometer", "pages": [214, 217], "verified": true,
     "steps": [ { "change": "down", "size": 3, "role": "cause" }, { "change": "up", "size": 3, "role": "explore" } ] },
-  { "id": "ppball", "name": "찌그러진 탁구공", "kind": "emergency", "variable": "temperature", "scene": "dented-ball", "gauge": "thermometer", "pages": [215, 217], "verified": true,
+  { "id": "ppball", "name": "찌그러진 탁구공", "kind": "emergency", "rig": "dip", "variable": "temperature", "scene": "dented-ball", "gauge": "thermometer", "pages": [215, 217], "verified": true,
     "steps": [ { "change": "up", "size": 3, "role": "cause" } ] },
   { "id": "airbed", "name": "공기 침대", "kind": "emergency", "variable": "pressure", "scene": "lie-on-bed", "gauge": "pressure-sensor", "pages": [204, 207], "verified": true,
     "steps": [ { "change": "up", "size": 4, "role": "cause" } ] },

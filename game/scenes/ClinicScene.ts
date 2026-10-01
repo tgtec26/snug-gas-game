@@ -9,6 +9,7 @@ import {
 } from '@/game/exam';
 import { checkPistonRun, deviceVolume, heldConstant, needleFromVolume, pressureReading, stepTargetVolume, badgeText } from '@/game/rules';
 import { LensView } from '@/game/systems/lens';
+import { inEmergency, roundBlocked, comboRate } from '@/game/systems/emergencyRound';
 import type { Experiments, Patient } from '@/game/types';
 import type { ClinicLayout } from '@/game/layout';
 
@@ -149,7 +150,7 @@ export class ClinicScene extends Phaser.Scene {
   private act() { this.lastActionAt = performance.now(); }
 
   private onDown(p: Phaser.Input.Pointer) {
-    if (this.st.done) return;
+    if (this.st.done || roundBlocked()) return;
     const L = this.L; const x = p.worldX, y = p.worldY;
     const rs = L.reset;
     if (Math.hypot(x - rs.x, y - rs.y) < 48) { this.reset(); return; }
@@ -182,16 +183,16 @@ export class ClinicScene extends Phaser.Scene {
   private endDrag() { this.drag = null; }
 
   private nudgePiston(dir: number) {
-    if (this.st.done) return;
+    if (this.st.done || roundBlocked()) return;
     if (this.locked('pressure')) { this.shake.piston = performance.now() + 350; playSfx('error'); return; }
     this.st = movePiston(this.cfg, this.st, this.st.device.piston + dir); this.act();
   }
   private nudgeTemp(dir: number) {
-    if (this.st.done) return;
+    if (this.st.done || roundBlocked()) return;
     if (this.locked('temperature')) { this.shake.dial = performance.now() + 350; playSfx('error'); return; }
     this.st = moveTemp(this.cfg, this.st, this.st.device.tempStep + dir); this.act();
   }
-  private reset() { if (!this.st.done) { this.st = resetDevice(this.cfg, this.st); this.drag = null; this.hintText.setAlpha(0); this.act(); } }
+  private reset() { if (!this.st.done && !roundBlocked()) { this.st = resetDevice(this.cfg, this.st); this.drag = null; this.hintText.setAlpha(0); this.act(); } }
 
   // ── 진행 ────────────────────────────────────────────────────
   update() {
@@ -226,9 +227,10 @@ export class ClinicScene extends Phaser.Scene {
       this.tweens.add({ targets: this.previewImg, scale: this.previewImg.scale * 1.12, yoyo: true, duration: 140 });
       this.sparkle(this.L.patient.x, this.L.patient.y, 14);
     } else if (e.type === 'all-done' && !this.finishing) {
-      this.finishing = true; playSfx('success'); this.sparkle(this.L.patient.x, this.L.patient.y, 26);
+      this.finishing = true; playSfx('success', inEmergency() ? comboRate() : 1); this.sparkle(this.L.patient.x, this.L.patient.y, 26);
       this.finishTimer = window.setTimeout(() => {
         this.finishTimer = null;
+        if (inEmergency()) { useGame.getState().recordRound(this.patient.id, true); return; }
         useGame.getState().completeExam(this.patient.id, examResult(this.st, this.patient, this.limitMs, this.patient.kind === 'measure' && checkPistonRun(this.cfg, this.st.readings).complete));
       }, this.holdFinishMs);
     }

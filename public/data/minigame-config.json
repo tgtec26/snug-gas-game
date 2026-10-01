@@ -8,5 +8,6 @@
     "gain": 1.2e-06,
     "decayPerSec": 0.02,
     "hitMinSpeed": 60
-  }
+  },
+  "emergencyRoundMs": 18000
 }
