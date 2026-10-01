@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useLock } from '@/components/hooks/useLock';
-import { DoctorPortrait } from '@/components/Portrait';
+import { DoctorPortraitArt } from '@/components/Portrait';
 
 interface Props { npcName: string; lines: string[]; onDone: () => void }
 
@@ -42,7 +42,7 @@ export function DialogBox({ npcName, lines, onDone }: Props) {
     <div className="absolute inset-x-0 bottom-0 pointer-events-auto cursor-pointer select-none" onClick={advance}>
       <div className="mx-6 mb-5 px-8 py-7 flex gap-6 min-h-[170px] rounded-3xl border-4 border-amber-300 bg-slate-900/90 shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
         <div className="shrink-0 flex flex-col items-center gap-2 w-[120px]">
-          <DoctorPortrait />
+          <DoctorPortraitArt />
           <div className="text-[16px] text-amber-200 font-bold text-center">{npcName}</div>
         </div>
         <div className="flex-1 text-[26px] leading-relaxed text-white">

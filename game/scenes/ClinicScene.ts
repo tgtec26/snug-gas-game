@@ -76,7 +76,7 @@ export class ClinicScene extends Phaser.Scene {
     this.finishing = false; this.stepStartAt = performance.now(); this.popAt = {}; this.drag = null; this.shake = { piston: 0, dial: 0 };
 
     this.g = this.add.graphics().setDepth(10);
-    const key = `patient_${patient.id}_ph`;
+    const key = this.textures.exists(`patient_${patient.id}`) ? `patient_${patient.id}` : `patient_${patient.id}_ph`;
     const p = this.L.patient;
     this.ghostImg = this.add.image(p.x, p.y, key).setDepth(9).setTint(0x1b2a33).setTintMode(Phaser.TintModes.FILL).setAlpha(0.28);
     this.previewImg = this.add.image(p.x, p.y, key).setDepth(11);

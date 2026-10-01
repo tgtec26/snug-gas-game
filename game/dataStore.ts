@@ -25,6 +25,7 @@ interface DataState {
   audio: AudioConfig | null;
   layout: Layout | null;
   minigame: MinigameConfig | null;
+  art: string[];                 // manifest.json에 적힌(실제로 있는) 그림 파일
   loaded: boolean;
   error: string | null;
   load: () => Promise<void>;
@@ -39,7 +40,7 @@ const getJson = async <T,>(file: string): Promise<T> => {
 /** 데이터 검증에 실패하면 개발·배포 모두 로딩 오류 화면을 보인다(데이터 없이는 판정할 수 없다). */
 export const useDataStore = create<DataState>()((set) => ({
   patients: [], experiments: null, particleRules: [], people: [], homework: [], dialog: null, audio: null, layout: null, minigame: null,
-  loaded: false, error: null,
+  loaded: false, error: null, art: [],
   load: async () => {
     try {
       const [patients, experiments, particleRules, people, homework, dialog, audio, layout, minigame] = await Promise.all([
@@ -55,9 +56,10 @@ export const useDataStore = create<DataState>()((set) => ({
         ...validateMinigame(minigame),
       ];
       if (errs.length) throw new Error(errs.join(' / '));
+      const art = await fetch('/assets/manifest.json', { cache: 'no-store' }).then(r => (r.ok ? r.json() : [])).catch(() => []) as string[];
       useGame.getState().loadPatients(patients);
       configureAudio(audio);
-      set({ patients, experiments, particleRules, people, homework, dialog, audio, layout, minigame, loaded: true, error: null });
+      set({ art: Array.isArray(art) ? art : [], patients, experiments, particleRules, people, homework, dialog, audio, layout, minigame, loaded: true, error: null });
     } catch (e) {
       set({ error: e instanceof Error ? e.message : String(e), loaded: true });
     }

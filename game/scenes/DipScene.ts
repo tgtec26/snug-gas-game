@@ -71,7 +71,7 @@ export class DipScene extends Phaser.Scene {
     this.res = resolveSyringe(this.L, this.cfg, this.worn, this.target.x, this.target.y);
 
     this.g = this.add.graphics().setDepth(10);
-    const key = `patient_${patient.id}_ph`; const p = this.PL;
+    const key = this.textures.exists(`patient_${patient.id}`) ? `patient_${patient.id}` : `patient_${patient.id}_ph`; const p = this.PL;
     this.ghostImg = this.add.image(p.x, p.y, key).setDepth(9).setTint(0x1b2a33).setTintMode(Phaser.TintModes.FILL).setAlpha(0.28);
     this.previewImg = this.add.image(p.x, p.y, key).setDepth(11);
     this.hintText = this.add.text(640, 70, '', { ...TEXT, ...OUTLINE, fontSize: '26px', fontStyle: 'bold', color: '#ffffff' }).setDepth(30).setOrigin(0.5).setAlpha(0);

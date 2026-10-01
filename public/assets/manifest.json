@@ -1,1 +1,14 @@
-[]
+[
+  "bg/clinic.webp",
+  "bg/exam.webp",
+  "npc/doctor.webp",
+  "patients/rubberball.webp",
+  "patients/snackbag.webp",
+  "patients/foilballoon.webp",
+  "patients/soccerball.webp",
+  "patients/ppball.webp",
+  "patients/airbed.webp",
+  "patients/balloon.webp",
+  "patients/shoe.webp",
+  "patients/emergency.webp"
+]

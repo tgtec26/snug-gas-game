@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { PatientIcon, PATIENT_ICON_IDS } from '@/components/art/PatientIcon';
+import { PatientIconSvg, PATIENT_ICON_IDS } from '@/components/art/PatientIcon';
 import { currentScene } from '@/game/systems/sceneRouter';
 import { artToLoad, DPR } from '@/game/systems/render';
 import { PLACEHOLDERS, svgDataUrl } from '@/game/systems/svgArt';
@@ -19,7 +19,7 @@ export class BootScene extends Phaser.Scene {
     }
     // 환자 아이콘은 React 그림(PatientIcon)과 같은 SVG를 Phaser 텍스처로도 쓴다: patient_<id>_ph
     for (const id of PATIENT_ICON_IDS) {
-      const svg = renderToStaticMarkup(createElement(PatientIcon, { id, size: 240, shadow: false })).replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+      const svg = renderToStaticMarkup(createElement(PatientIconSvg, { id, size: 240, shadow: false })).replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
       this.load.svg(`patient_${id}_ph`, svgDataUrl(svg), { width: 240 * DPR, height: 240 * DPR });
     }
     this.load.json('art_manifest', '/assets/manifest.json');

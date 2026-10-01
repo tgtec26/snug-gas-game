@@ -110,3 +110,7 @@
 4. **admin에 없는 값**: `docs/principles-check.md` 하단 목록.
 5. **배포**: Vercel Import는 사용자가 대시보드에서(푸시는 이미 되어 있음).
 6. 교과서 원문 발췌: `docs/superpowers/specs/2026-09-30-g1-gas-textbook.md`가 이 저장소의 발췌본이다. `docs/textbook/README.md`(드라이브 주소 모음)는 아직 없다.
+
+## 2026-10-01 codex 그림 1차 교체
+- 새 계정 로그인 확인: `codex login status`는 ChatGPT 로그인이지만 `~/.codex/config.toml`의 기본 모델 `gpt-6.1-sol`을 이 계정이 지원하지 않아 처음엔 실패(400). `-m gpt-5.5`는 동작, `gpt-5.4`는 불가. `scripts/gen_image.sh`에 `CODEX_MODEL` 환경변수 지원을 추가했다(전역 설정은 그대로).
+- 교체: 대기실·검사대 배경, 진료소장 초상, 환자 8종 + 응급실 문(투명 배경 알파 확인). `PatientIcon`·`DoctorPortraitArt`는 `manifest`에 있으면 그림, 없으면 SVG. Phaser는 `patient_<id>` 텍스처가 있으면 사용. 브라우저에서 대기실·사연·검사 장치 확인.

@@ -1,3 +1,5 @@
+import { useDataStore } from '@/game/dataStore';
+
 /** 환자 아이콘 플레이스홀더 (SVG 코드 그림). codex 이미지로 교체 예정. viewBox 120×120. */
 export type PatientId = string;
 
@@ -57,11 +59,25 @@ const BODY: Record<string, React.ReactNode> = {
 /** 플레이스홀더가 있는 환자·아이콘 id. BootScene이 Phaser 텍스처를 만든다. */
 export const PATIENT_ICON_IDS = Object.keys(BODY);
 
-export function PatientIcon({ id, size = 120, shadow = true }: { id: PatientId; size?: number; shadow?: boolean }) {
+/** 플레이스홀더 SVG 그림. BootScene이 Phaser 텍스처를 만들 때도 쓴다. */
+export function PatientIconSvg({ id, size = 120, shadow = true }: { id: PatientId; size?: number; shadow?: boolean }) {
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" aria-hidden="true" style={{ overflow: 'visible' }}>
       {shadow && <ellipse cx="60" cy="112" rx="38" ry="6" fill="#000" opacity=".22" />}
       {BODY[id] ?? <circle cx="60" cy="60" r="40" fill="#b0bec5" />}
     </svg>
+  );
+}
+
+/** codex 그림(public/assets/patients/<id>.webp)이 manifest에 있으면 그림, 없으면 SVG 플레이스홀더 */
+export function PatientIcon({ id, size = 120, shadow = true }: { id: PatientId; size?: number; shadow?: boolean }) {
+  const has = useDataStore(s => s.art.includes(`patients/${id}.webp`));
+  if (!has) return <PatientIconSvg id={id} size={size} shadow={shadow} />;
+  return (
+    <div style={{ position: 'relative', width: size, height: size }}>
+      {shadow && <svg width={size} height={size} viewBox="0 0 120 120" aria-hidden="true" style={{ position: 'absolute', inset: 0 }}><ellipse cx="60" cy="112" rx="38" ry="6" fill="#000" opacity=".22" /></svg>}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`/assets/patients/${id}.webp`} alt="" width={size} height={size} draggable={false} style={{ position: 'absolute', inset: 0, objectFit: 'contain', objectPosition: '50% 92%' }} />
+    </div>
   );
 }

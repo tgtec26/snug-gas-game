@@ -1,3 +1,5 @@
+import { useDataStore } from '@/game/dataStore';
+
 /** 진료소장 초상 플레이스홀더 (SVG 코드 그림). 그림이 준비되면 codex 이미지로 교체한다. */
 export function DoctorPortrait({ size = 96 }: { size?: number }) {
   return (
@@ -12,4 +14,12 @@ export function DoctorPortrait({ size = 96 }: { size?: number }) {
       <circle cx="48" cy="22" r="6" fill="#ffffff" stroke="#7fc8c4" strokeWidth="2" />
     </svg>
   );
+}
+
+/** codex 그림이 있으면 그림, 없으면 SVG 플레이스홀더 */
+export function DoctorPortraitArt({ size = 96 }: { size?: number }) {
+  const has = useDataStore(s => s.art.includes('npc/doctor.webp'));
+  if (!has) return <DoctorPortrait size={size} />;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/assets/npc/doctor.webp" alt="" width={size} height={size} draggable={false} style={{ objectFit: 'contain' }} />;
 }

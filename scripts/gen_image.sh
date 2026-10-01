@@ -4,6 +4,7 @@
 #   scripts/gen_image.sh <저장할 경로.png> "<요청 문구>" [참고 그림 ...]
 #
 # 예) scripts/gen_image.sh docs/assets-source/rbc/walk-v2.png "첨부한 시트에 ... 추가" ~/Downloads/모자\ 추가.png
+# - 계정이 기본 모델을 지원하지 않으면 CODEX_MODEL=gpt-5.5 처럼 모델을 지정한다.
 # - 참고 그림을 주면 그 그림을 보고 편집·참고해서 만든다.
 # - 저장할 경로에 파일이 이미 있으면 덮어쓰지 않고 멈춘다.
 # - 결과는 원본 보관용 PNG. 게임에 넣을 때는 WebP 변환(scripts/slice_rbc_sheet.py 등)을 따로 한다.
@@ -29,7 +30,7 @@ $prompt
 If reference images are attached, look at them first and follow them. When done, copy the generated PNG from \$CODEX_HOME/generated_images into the current directory as result.png, then reply with DONE."
 
 echo "Codex에 요청 중… (1~3분)"
-if ! codex exec --skip-git-repo-check -s workspace-write -C "$work" ${imgs[@]+"${imgs[@]}"} -o "$work/last.txt" "$instr" > "$work/run.log" 2>&1; then
+if ! codex exec ${CODEX_MODEL:+-m "$CODEX_MODEL"} --skip-git-repo-check -s workspace-write -C "$work" ${imgs[@]+"${imgs[@]}"} -o "$work/last.txt" "$instr" > "$work/run.log" 2>&1; then
   echo "Codex 실패:"; grep -E "ERROR|error" "$work/run.log" | sort -u | head -5; exit 1
 fi
 [ -f "$work/result.png" ] || { echo "결과 파일이 없습니다. 로그:"; tail -20 "$work/run.log"; exit 1; }

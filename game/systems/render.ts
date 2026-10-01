@@ -27,6 +27,15 @@ export const ART: Record<string, string> = {
   'bg/exam.webp': 'exam_bg',
   'npc/apprentice.webp': 'npc_apprentice',
   'npc/doctor.webp': 'npc_doctor',
+  'patients/rubberball.webp': 'patient_rubberball',
+  'patients/snackbag.webp': 'patient_snackbag',
+  'patients/foilballoon.webp': 'patient_foilballoon',
+  'patients/soccerball.webp': 'patient_soccerball',
+  'patients/ppball.webp': 'patient_ppball',
+  'patients/airbed.webp': 'patient_airbed',
+  'patients/balloon.webp': 'patient_balloon',
+  'patients/shoe.webp': 'patient_shoe',
+  'patients/emergency.webp': 'patient_emergency',
 };
 /** manifest.json 에 적힌(= 실제로 있는) 파일만 [키, URL]로 — 없는 파일을 요청해 404가 쌓이지 않게 */
 export const artToLoad = (files: string[]): [string, string][] =>
