@@ -10,7 +10,17 @@ export interface ClinicLayout {
   reset: { x: number; y: number };
   graph: { x: number; y: number; w: number; h: number };
 }
-export interface Layout { clinic: ClinicLayout }
+export interface DipLayout {
+  hot: { x: number; top: number; bottom: number; w: number };
+  cold: { x: number; top: number; bottom: number; w: number };
+  waterInset: number;   // 비커 윗면에서 수면까지
+  syringe: { x: number; y: number; w: number; pxPerMl: number; nozzle: number; minX: number; maxX: number; minY: number; maxY: number };
+  person: { x: number; y: number; r: number };
+  gloves: { x: number; y: number };
+  goggles: { x: number; y: number };
+  thermo: { x: number; y: number; h: number };
+}
+export interface Layout { clinic: ClinicLayout; dip: DipLayout }
 
 const COORD = new Set(['x', 'y', 'top', 'bottom']);
 
@@ -56,5 +66,12 @@ export function validateLayout(l: Layout): string[] {
       if (!(c.beaker.w > c.barrel.w)) errs.push('clinic.beaker: 통이 주사기보다 넓어야 한다');
     }
   } else errs.push('clinic 배치가 없다');
+  const d = l.dip;
+  if (!d) errs.push('dip 배치가 없다');
+  else {
+    for (const k of ['hot', 'cold'] as const) if (!(d[k].top < d[k].bottom)) errs.push(`dip.${k}: top이 bottom보다 위여야 한다`);
+    if (!(d.syringe.minX < d.syringe.maxX) || !(d.syringe.minY < d.syringe.maxY)) errs.push('dip.syringe: 이동 범위가 거꾸로다');
+    if (!(d.hot.w > d.syringe.w) || !(d.cold.w > d.syringe.w)) errs.push('dip: 비커가 주사기보다 넓어야 한다');
+  }
   return errs;
 }

@@ -1,13 +1,21 @@
 import type * as Phaser from 'phaser';
 import { useGame } from '@/game/store';
-import type { Phase } from '@/game/types';
+import { useDataStore } from '@/game/dataStore';
+import type { Kind, Phase } from '@/game/types';
 
 /** 등록된 씬 키. 태스크가 진행되며 Clinic(Task 7), Shake(Task 12), Finale(Task 14)이 더해진다. */
-export type SceneKey = 'Backdrop' | 'Clinic';
+export type SceneKey = 'Backdrop' | 'Clinic' | 'Dip';
 
 /** phase → 씬. 검사(exam)는 검사 장치 씬, 나머지 오버레이 위주 phase는 대기실 배경 씬. */
-export function sceneFor(phase: Phase): SceneKey {
-  return phase === 'exam' ? 'Clinic' : 'Backdrop';
+export function sceneFor(phase: Phase, kind?: Kind): SceneKey {
+  if (phase !== 'exam') return 'Backdrop';
+  return kind === 'dip' ? 'Dip' : 'Clinic';
+}
+
+/** 지금 진료 중인 환자의 종류까지 보고 고른 씬 */
+export function currentScene(phase: Phase): SceneKey {
+  const id = useGame.getState().currentId;
+  return sceneFor(phase, useDataStore.getState().patients.find(p => p.id === id)?.kind);
 }
 
 /**
@@ -17,7 +25,7 @@ export function sceneFor(phase: Phase): SceneKey {
  */
 export function attachRouter(scene: Phaser.Scene) {
   const go = (phase: Phase) => {
-    const target = sceneFor(phase);
+    const target = currentScene(phase);
     if (target === scene.scene.key) return false;
     unsub(); scene.scene.start(target);
     return true;

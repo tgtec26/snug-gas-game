@@ -30,6 +30,7 @@ export interface Experiments {
   temp: { minStep: number; maxStep: number; perStep: number };
   gear: string[];
   lens: { observeMs: number };
+  dip: { hotStep: number; coldStep: number; rate: number };   // 담그기: 뜨거운 물·얼음물의 온도 단계, 단계/초
 }
 
 export interface Device { piston: number; tempStep: number }

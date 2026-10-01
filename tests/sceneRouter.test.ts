@@ -6,7 +6,7 @@ import { BGM_SLOTS } from '../game/audio';
 import type { Phase } from '../game/types';
 
 const PHASES: Phase[] = ['title', 'intro', 'tutorial', 'clinic', 'story', 'exam', 'diagnosis', 'emergency', 'ending', 'result'];
-const REGISTERED = ['Backdrop', 'Clinic'];
+const REGISTERED = ['Backdrop', 'Clinic', 'Dip'];
 
 describe('phase → 씬', () => {
   it('모든 phase가 등록된 씬으로 간다', () => {
@@ -18,6 +18,14 @@ describe('검사 장치 씬', () => {
   it('exam만 Clinic, 나머지는 Backdrop (응급실은 Task 13 전까지 Backdrop)', () => {
     expect(sceneFor('exam')).toBe('Clinic');
     for (const p of PHASES.filter(x => x !== 'exam')) expect(sceneFor(p), p).toBe('Backdrop');
+  });
+});
+
+describe('담그기 진료 씬', () => {
+  it('dip 환자의 exam만 Dip 씬', () => {
+    expect(sceneFor('exam', 'dip')).toBe('Dip');
+    expect(sceneFor('exam', 'redo')).toBe('Clinic');
+    expect(sceneFor('diagnosis', 'dip')).toBe('Backdrop');
   });
 });
 

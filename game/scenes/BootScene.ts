@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { PatientIcon, PATIENT_ICON_IDS } from '@/components/art/PatientIcon';
-import { sceneFor } from '@/game/systems/sceneRouter';
+import { currentScene } from '@/game/systems/sceneRouter';
 import { artToLoad, DPR } from '@/game/systems/render';
 import { PLACEHOLDERS, svgDataUrl } from '@/game/systems/svgArt';
 import { useGame } from '@/game/store';
@@ -28,6 +28,6 @@ export class BootScene extends Phaser.Scene {
     });
   }
   create() {
-    this.scene.start(sceneFor(useGame.getState().phase));
+    this.scene.start(currentScene(useGame.getState().phase));
   }
 }
