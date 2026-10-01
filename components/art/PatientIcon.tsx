@@ -54,6 +54,9 @@ const BODY: Record<string, React.ReactNode> = {
   </>),
 };
 
+/** 플레이스홀더가 있는 환자·아이콘 id. BootScene이 Phaser 텍스처를 만든다. */
+export const PATIENT_ICON_IDS = Object.keys(BODY);
+
 export function PatientIcon({ id, size = 120, shadow = true }: { id: PatientId; size?: number; shadow?: boolean }) {
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" aria-hidden="true" style={{ overflow: 'visible' }}>

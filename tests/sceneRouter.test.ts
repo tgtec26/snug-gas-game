@@ -1,15 +1,23 @@
-import { describe, it, expect } from 'vitest';
-import { sceneFor } from '../game/systems/sceneRouter';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { sceneFor, attachRouter } from '../game/systems/sceneRouter';
+import { useGame } from '../game/store';
 import { bgmSlotFor } from '../components/AudioRunner';
 import { BGM_SLOTS } from '../game/audio';
 import type { Phase } from '../game/types';
 
 const PHASES: Phase[] = ['title', 'intro', 'tutorial', 'clinic', 'story', 'exam', 'diagnosis', 'emergency', 'ending', 'result'];
-const REGISTERED = ['Backdrop'];
+const REGISTERED = ['Backdrop', 'Clinic'];
 
 describe('phase → 씬', () => {
   it('모든 phase가 등록된 씬으로 간다', () => {
     for (const p of PHASES) expect(REGISTERED, p).toContain(sceneFor(p));
+  });
+});
+
+describe('검사 장치 씬', () => {
+  it('exam만 Clinic, 나머지는 Backdrop (응급실은 Task 13 전까지 Backdrop)', () => {
+    expect(sceneFor('exam')).toBe('Clinic');
+    for (const p of PHASES.filter(x => x !== 'exam')) expect(sceneFor(p), p).toBe('Backdrop');
   });
 });
 
@@ -24,5 +32,46 @@ describe('phase → 배경음', () => {
     expect(bgmSlotFor('emergency')).toBe('play');
     expect(bgmSlotFor('ending')).toBe('ending');
     expect(bgmSlotFor('result')).toBe('ending');
+  });
+});
+
+describe('attachRouter (씬이 시작되는 사이에 phase가 바뀌어도 놓치지 않는다)', () => {
+  beforeEach(() => { localStorage.clear(); useGame.getState().reset(); });
+  const fake = (key: string) => {
+    const handlers: Array<() => void> = [];
+    return {
+      start: vi.fn(),
+      scene: { scene: { key, start: vi.fn() }, events: { once: (_: string, fn: () => void) => handlers.push(fn) } },
+      shutdown: () => handlers.forEach(h => h()),
+    };
+  };
+  it('붙는 순간 이미 phase가 exam이면 바로 Clinic으로 넘긴다', () => {
+    useGame.setState({ phase: 'exam' });
+    const f = fake('Backdrop');
+    attachRouter(f.scene as never);
+    expect(f.scene.scene.start).toHaveBeenCalledWith('Clinic');
+  });
+  it('이미 알맞은 씬이면 아무것도 하지 않는다', () => {
+    useGame.setState({ phase: 'clinic' });
+    const f = fake('Backdrop');
+    attachRouter(f.scene as never);
+    expect(f.scene.scene.start).not.toHaveBeenCalled();
+  });
+  it('붙은 뒤 phase가 바뀌면 한 번만 넘기고 구독을 끊는다', () => {
+    useGame.setState({ phase: 'clinic' });
+    const f = fake('Backdrop');
+    attachRouter(f.scene as never);
+    useGame.setState({ phase: 'exam' });
+    useGame.setState({ phase: 'diagnosis' });
+    expect(f.scene.scene.start).toHaveBeenCalledTimes(1);
+    expect(f.scene.scene.start).toHaveBeenCalledWith('Clinic');
+  });
+  it('shutdown 뒤에는 반응하지 않는다', () => {
+    useGame.setState({ phase: 'clinic' });
+    const f = fake('Backdrop');
+    attachRouter(f.scene as never);
+    f.shutdown();
+    useGame.setState({ phase: 'exam' });
+    expect(f.scene.scene.start).not.toHaveBeenCalled();
   });
 });

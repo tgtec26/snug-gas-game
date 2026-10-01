@@ -17,6 +17,14 @@ export function needleFromVolume(volume: number, reference: number): number {
   return reference / volume;
 }
 
+/**
+ * 압력 센서 바늘의 상대 높이. 피스톤을 움직일 때만 변한다.
+ * 온도를 바꿀 때는 피스톤이 압력을 맞추며 따라가므로(압력 일정) 센서 값은 그대로다(교과서 212쪽 조건).
+ */
+export function pressureReading(cfg: Experiments, d: Device): number {
+  return needleFromVolume(d.tempStep !== 0 ? cfg.syringe.start : d.piston, cfg.syringe.start);
+}
+
 /** 일정한 비율로 증가: 온도 단계가 1 오를 때마다 같은 만큼 늘어난다. */
 export function volumeFromTemp(cfg: Experiments, tempStep: number): number {
   return cfg.syringe.start + tempStep * cfg.temp.perStep;

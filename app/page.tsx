@@ -33,7 +33,7 @@ export default function Home() {
     <main className="fixed inset-0 overflow-hidden bg-black flex items-center justify-center">
       <div className="relative bg-black overflow-hidden" style={{ width: size.w, height: size.h }}>
         <GameContainer />
-        <div className="absolute top-0 left-0" style={{ width: GAME_WIDTH, height: GAME_HEIGHT, transform: `scale(${size.scale})`, transformOrigin: 'top left' }}>
+        <div className="absolute top-0 left-0 pointer-events-none" style={{ width: GAME_WIDTH, height: GAME_HEIGHT, transform: `scale(${size.scale})`, transformOrigin: 'top left' }}>
           <UIOverlay />
         </div>
       </div>

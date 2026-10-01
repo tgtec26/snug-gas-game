@@ -5,7 +5,7 @@ import particleRules from '../public/data/particle-rules.json';
 import type { Device, Experiments, ParticleRule, Patient } from '../game/types';
 import {
   lawOf, volumeDirection, needleFromVolume, volumeFromTemp, deviceVolume, heldConstant, canUse, badgeText,
-  stepTargetVolume, matchStep, checkPistonRun, checkSafetyGear, checkSubmerged, checkLensObserved,
+  stepTargetVolume, matchStep, pressureReading, checkPistonRun, checkSafetyGear, checkSubmerged, checkLensObserved,
   particleView, scoreStars, comboOf,
 } from '../game/rules';
 
@@ -62,6 +62,18 @@ describe('한 번에 하나만 바꾸기 (잠금)', () => {
     expect(canUse(cfg, d, 'pressure')).toBe(false);
     expect(deviceVolume(cfg, d)).toBe(volumeFromTemp(cfg, 2));
     expect(badgeText('pressure')).toBe('압력 일정');
+  });
+});
+
+describe('압력 센서 읽음 (압력 일정이면 바늘은 그대로)', () => {
+  it('원점에서 1', () => { expect(pressureReading(cfg, origin)).toBe(1); });
+  it('피스톤을 누르면 오르고 당기면 내린다 (반비례)', () => {
+    expect(pressureReading(cfg, { piston: 10, tempStep: 0 })).toBeCloseTo(2);
+    expect(pressureReading(cfg, { piston: 12, tempStep: 0 })).toBeGreaterThan(1);
+    expect(pressureReading(cfg, { piston: 25, tempStep: 0 })).toBeLessThan(1);
+  });
+  it('온도를 바꿀 때는 어느 단계에서도 바늘이 그대로다', () => {
+    for (let t = cfg.temp.minStep; t <= cfg.temp.maxStep; t++) expect(pressureReading(cfg, { piston: cfg.syringe.start, tempStep: t })).toBe(1);
   });
 });
 
