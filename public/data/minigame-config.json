@@ -9,5 +9,15 @@
     "decayPerSec": 0.02,
     "hitMinSpeed": 60
   },
-  "emergencyRoundMs": 18000
+  "emergencyRoundMs": 18000,
+  "lockMs": 700,
+  "longLockMs": 1200,
+  "storyMs": 3200,
+  "emergencyStoryMs": 1800,
+  "finale": {
+    "pauseMs": 600,
+    "pumpMs": 2200,
+    "pressGain": 0.12,
+    "autoNextMs": 2200
+  }
 }

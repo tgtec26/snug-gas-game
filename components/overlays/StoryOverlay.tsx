@@ -11,21 +11,21 @@ import { STORY_DECOR } from '@/components/art/storyDecor';
 import type { Patient } from '@/game/types';
 
 const START_MS = 600;   // 장면이 보인 뒤 계기가 움직이기 시작
-const END_MS = 3200;    // 자동으로 다음 단계
 
 export function StoryOverlay() {
   const phase = useGame(s => s.phase);
   const id = useGame(s => s.currentId);
   const patient = useDataStore(s => s.patients.find(p => p.id === id));
   const finishStory = useGame(s => s.finishStory);
+  const storyMs = useDataStore(s => s.minigame?.storyMs ?? 3200);
   if (phase !== 'story' || !patient) return null;
-  return <Story key={patient.id} patient={patient} endMs={END_MS} onDone={finishStory} />;
+  return <Story key={patient.id} patient={patient} endMs={storyMs} onDone={finishStory} />;
 }
 
 /** 글 없는 사연 장면: 계기 바늘·눈금이 움직이고 환자 모양이 변한다. 잠금(0.7초) 뒤에는 탭·Enter·Space로 건너뛴다. */
 export function Story({ patient, endMs, onDone }: { patient: Patient; endMs: number; onDone: () => void }) {
   const finishStory = onDone;
-  const locked = useLock(700);
+  const locked = useLock('short');
   const plan = storyPlan(patient);
   const [value, setValue] = useState(plan.from);
   const [moved, setMoved] = useState(false);

@@ -26,7 +26,8 @@ export type ExamEvent =
   | { type: 'wrong-gauge' }
   | { type: 'all-done' };
 
-export interface MinigameConfig { examTimeLimitMs: number; hintIdleMs: number; successHoldMs: number; particleCount: number; emergencyRoundMs: number; shake: ShakeConfig }
+export interface MinigameConfig { examTimeLimitMs: number; hintIdleMs: number; successHoldMs: number; particleCount: number; emergencyRoundMs: number; lockMs: number; longLockMs: number; storyMs: number; emergencyStoryMs: number;
+  finale: { pauseMs: number; pumpMs: number; pressGain: number; autoNextMs: number }; shake: ShakeConfig }
 
 export function validateMinigame(c: MinigameConfig): string[] {
   const errs: string[] = [];
@@ -34,6 +35,9 @@ export function validateMinigame(c: MinigameConfig): string[] {
     if (typeof c[k] !== 'number' || !(c[k] > 0)) errs.push(`${k}는 0보다 커야 한다`);
   }
   if (!(c.emergencyRoundMs >= 5000)) errs.push('emergencyRoundMs는 5000(5초) 이상이어야 한다');
+  for (const k of ['lockMs', 'longLockMs', 'storyMs', 'emergencyStoryMs'] as const) if (!(c[k] > 0)) errs.push(`${k}는 0보다 커야 한다`);
+  if (!c.finale) errs.push('finale 설정이 없다');
+  else for (const k of ['pauseMs', 'pumpMs', 'pressGain', 'autoNextMs'] as const) if (!(c.finale[k] > 0)) errs.push(`finale.${k}는 0보다 커야 한다`);
   errs.push(...validateShake(c.shake));
   if (!Number.isInteger(c.particleCount) || !(c.particleCount > 0)) errs.push('particleCount는 0보다 큰 정수여야 한다');
   return errs;

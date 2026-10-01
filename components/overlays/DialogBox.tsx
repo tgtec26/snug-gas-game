@@ -12,7 +12,7 @@ const CHAR_MS = 18;
 export function DialogBox({ npcName, lines, onDone }: Props) {
   const [idx, setIdx] = useState(0);
   const [shown, setShown] = useState(0);
-  const locked = useLock(700);
+  const locked = useLock('short');
   const line = lines[idx] ?? '';
   const complete = shown >= line.length;
 

@@ -8,14 +8,7 @@ import { playSfx } from '@/game/audio';
 
 type Stage = 'pause' | 'pump' | 'launch' | 'count' | 'done';
 
-const PAUSE_MS = 600;       // 잠깐 멈춤 (입력 잠금)
-const PUMP_MS = 2200;       // 펌프 연타 제한 시간 (2초 남짓)
-const PRESS_GAIN = 0.12;    // 한 번 누를 때 오르는 압력
 const SKIP_AFTER_MS = 1000; // 잠금이 풀린 뒤부터 건너뛸 수 있다
-const AUTO_NEXT_MS = 2200;  // 별 카운트업이 끝난 뒤 자동으로 요약 팝업
-
-const PUMP = { x: 470, y: 690 };
-const PAD = { x: 800, y: 660 };
 
 /** 에어 로켓 피날레(6-8): 펌프 연타 → 로켓이 위쪽 하늘로 발사 → 빛 폭발·팡파르 → 별 카운트업 → 요약 팝업. 원리는 글로 설명하지 않는 연출. */
 export class FinaleScene extends Phaser.Scene {
@@ -36,6 +29,12 @@ export class FinaleScene extends Phaser.Scene {
   private doneAt = 0;
   private advanced = false;
   private lastKeyAt = 0;
+  private PAUSE_MS = 600;
+  private PUMP_MS = 2200;
+  private PRESS_GAIN = 0.12;
+  private AUTO_NEXT_MS = 2200;
+  private PUMP = { x: 470, y: 690 };
+  private PAD = { x: 800, y: 660 };
 
   constructor() { super({ key: 'Finale' }); }
 
@@ -46,7 +45,9 @@ export class FinaleScene extends Phaser.Scene {
     this.stage = 'pause'; this.t0 = performance.now(); this.charge = 0; this.handle = 0; this.rocketT = 0; this.trail = [];
     this.shown = { stars: 0 }; this.doneAt = 0; this.advanced = false; this.lastKeyAt = 0;
 
-    const s = useGame.getState(); const patients = useDataStore.getState().patients;
+    const data = useDataStore.getState(); const s = useGame.getState(); const patients = data.patients;
+    if (data.minigame) { const f = data.minigame.finale; this.PAUSE_MS = f.pauseMs; this.PUMP_MS = f.pumpMs; this.PRESS_GAIN = f.pressGain; this.AUTO_NEXT_MS = f.autoNextMs; }
+    if (data.layout) { this.PUMP = data.layout.finale.pump; this.PAD = data.layout.finale.pad; }
     const sum = summarize({ records: s.records, emergencyResults: s.emergencyResults }, patients);
     this.stars = sum.stars;
     this.countText = this.add.text(640, 330, '', { ...TEXT, ...OUTLINE, fontSize: '120px', fontStyle: 'bold', color: '#ffd54f' }).setOrigin(0.5).setDepth(30).setAlpha(0);
@@ -70,7 +71,7 @@ export class FinaleScene extends Phaser.Scene {
 
   private onDown(p: Phaser.Input.Pointer) {
     if (this.stage === 'pump') {
-      if (Math.hypot(p.worldX - PUMP.x, p.worldY - (PUMP.y - 150)) < 130) { this.press(); return; }
+      if (Math.hypot(p.worldX - this.PUMP.x, p.worldY - (this.PUMP.y - 150)) < 130) { this.press(); return; }
     }
     if (p.worldX > 1100 && p.worldY > 690) this.skip();
     else if (this.stage === 'done') this.advance();
@@ -81,17 +82,17 @@ export class FinaleScene extends Phaser.Scene {
     const now = performance.now();
     if (this.stage !== 'pump' || now - this.lastKeyAt < 40) return;
     this.lastKeyAt = now;
-    this.charge = Math.min(1, this.charge + PRESS_GAIN); this.handle = 1;
+    this.charge = Math.min(1, this.charge + this.PRESS_GAIN); this.handle = 1;
     playSfx('correct', 0.9 + this.charge * 0.5);
     for (let i = 0; i < 4; i++) {
-      const c = this.add.circle(PAD.x - 30 + Math.random() * 60, PAD.y + 30, 5, 0xffffff, 0.8).setDepth(8);
+      const c = this.add.circle(this.PAD.x - 30 + Math.random() * 60, this.PAD.y + 30, 5, 0xffffff, 0.8).setDepth(8);
       this.tweens.add({ targets: c, y: c.y - 40 - Math.random() * 40, alpha: 0, duration: 400, onComplete: () => c.destroy() });
     }
     if (this.charge >= 1) this.launch();
   }
 
   private skip() {
-    if (this.elapsed() < PAUSE_MS + SKIP_AFTER_MS) return;
+    if (this.elapsed() < this.PAUSE_MS + SKIP_AFTER_MS) return;
     if (this.stage === 'pump') { this.charge = Math.max(this.charge, 0.6); this.launch(); }
     else if (this.stage === 'launch' || this.stage === 'count') this.startCount(true);
     else if (this.stage === 'done') this.advance();
@@ -125,7 +126,7 @@ export class FinaleScene extends Phaser.Scene {
   private boom(quiet: boolean) {
     this.cameras.main.flash(260, 255, 255, 255, true);
     if (!quiet) playSfx('fanfare');
-    const cx = PAD.x + 60 * 0, cy = Math.max(this.apexY, 100);
+    const cx = this.PAD.x + 60 * 0, cy = Math.max(this.apexY, 100);
     for (let i = 0; i < 70; i++) {
       const a = Math.random() * Math.PI * 2; const d = 120 + Math.random() * 380;
       const c = this.add.circle(cx, cy, 5 + Math.random() * 9, [0xffd54f, 0xffffff, 0xff8a65, 0x8fe3c0, 0x80d8ff][i % 5]).setDepth(25);
@@ -142,14 +143,14 @@ export class FinaleScene extends Phaser.Scene {
 
   update() {
     const now = performance.now(); const el = this.elapsed();
-    if (this.stage === 'pause' && el >= PAUSE_MS) { this.stage = 'pump'; this.t0 = now; }
-    else if (this.stage === 'pump' && el >= PUMP_MS) this.launch();
+    if (this.stage === 'pause' && el >= this.PAUSE_MS) { this.stage = 'pump'; this.t0 = now; }
+    else if (this.stage === 'pump' && el >= this.PUMP_MS) this.launch();
     else if (this.stage === 'launch') {
       this.rocketT = Math.min(1, el / 1100);
-      const x = PAD.x, y = 600 + (this.apexY - 600) * (1 - Math.pow(1 - this.rocketT, 2.2));
+      const x = this.PAD.x, y = 600 + (this.apexY - 600) * (1 - Math.pow(1 - this.rocketT, 2.2));
       this.rocketY = y; this.trail.push({ x: x + (Math.random() - 0.5) * 10, y: y + 60, t0: now });
       if (this.rocketT >= 1) this.startCount();
-    } else if (this.stage === 'done' && now - this.doneAt > AUTO_NEXT_MS) this.advance();
+    } else if (this.stage === 'done' && now - this.doneAt > this.AUTO_NEXT_MS) this.advance();
     this.handle = Math.max(0, this.handle - 0.12);
     this.trail = this.trail.filter(p => now - p.t0 < 500);
     this.draw(now);
@@ -175,12 +176,12 @@ export class FinaleScene extends Phaser.Scene {
   }
 
   private drawTube(g: Phaser.GameObjects.Graphics) {
-    g.lineStyle(14, 0x37474f, 1); g.beginPath(); g.moveTo(PUMP.x + 40, PUMP.y + 30); g.lineTo(PAD.x - 60, PAD.y + 40); g.strokePath();
-    g.lineStyle(8, 0x78909c, 1); g.beginPath(); g.moveTo(PUMP.x + 40, PUMP.y + 30); g.lineTo(PAD.x - 60, PAD.y + 40); g.strokePath();
+    g.lineStyle(14, 0x37474f, 1); g.beginPath(); g.moveTo(this.PUMP.x + 40, this.PUMP.y + 30); g.lineTo(this.PAD.x - 60, this.PAD.y + 40); g.strokePath();
+    g.lineStyle(8, 0x78909c, 1); g.beginPath(); g.moveTo(this.PUMP.x + 40, this.PUMP.y + 30); g.lineTo(this.PAD.x - 60, this.PAD.y + 40); g.strokePath();
   }
 
   private drawPump(g: Phaser.GameObjects.Graphics) {
-    const { x, y } = PUMP; const dip = this.handle * 60;
+    const { x, y } = this.PUMP; const dip = this.handle * 60;
     g.fillStyle(0x000000, 0.25); g.fillEllipse(x, y + 62, 220, 28);
     g.fillStyle(0x455a64, 1); g.fillRoundedRect(x - 90, y + 30, 180, 30, 10);
     g.fillStyle(0xcfd8dc, 1); g.fillRoundedRect(x - 36, y - 120, 72, 160, 14); g.lineStyle(4, 0x78909c, 1); g.strokeRoundedRect(x - 36, y - 120, 72, 160, 14);
@@ -196,14 +197,14 @@ export class FinaleScene extends Phaser.Scene {
   }
 
   private drawPad(g: Phaser.GameObjects.Graphics) {
-    const { x, y } = PAD;
+    const { x, y } = this.PAD;
     g.fillStyle(0x000000, 0.25); g.fillEllipse(x, y + 70, 200, 26);
     g.fillStyle(0x455a64, 1); g.fillRoundedRect(x - 80, y + 30, 160, 34, 10);
     g.fillStyle(0x78909c, 1); g.fillRect(x - 14, y + 4, 28, 30);
   }
 
   private drawRocket(g: Phaser.GameObjects.Graphics, y: number, flame: boolean) {
-    const x = PAD.x;
+    const x = this.PAD.x;
     if (flame) { g.fillStyle(0xffd54f, 0.9); g.fillTriangle(x - 16, y + 66, x + 16, y + 66, x, y + 110 + Math.random() * 20); }
     g.fillStyle(0x2e86de, 1); g.fillRoundedRect(x - 26, y - 40, 52, 110, 22);                     // 몸통(페트병)
     g.fillStyle(0xffffff, 0.4); g.fillRoundedRect(x - 16, y - 30, 12, 80, 6);
@@ -216,9 +217,9 @@ export class FinaleScene extends Phaser.Scene {
   /** 글 없는 안내: 손잡이를 위아래로 누르는 손 모양 */
   private drawHint(g: Phaser.GameObjects.Graphics, now: number) {
     if (this.charge > 0.3) return;
-    const off = (Math.sin(now / 160) + 1) * 28; const hx = PUMP.x + 40, hy = PUMP.y - 300 + off;
+    const off = (Math.sin(now / 160) + 1) * 28; const hx = this.PUMP.x + 40, hy = this.PUMP.y - 300 + off;
     const pts = [[0, 0], [0, 38], [9, 30], [16, 44], [23, 40], [16, 27], [28, 27]].map(([dx, dy]) => new Phaser.Math.Vector2(hx + dx, hy + dy));
     g.fillStyle(0xffffff, 1); g.lineStyle(3, 0x263238, 1); g.fillPoints(pts, true); g.strokePoints(pts, true);
-    g.fillStyle(0xffffff, 0.95); g.fillTriangle(PUMP.x - 130, PUMP.y - 150, PUMP.x - 160, PUMP.y - 190, PUMP.x - 100, PUMP.y - 190);
+    g.fillStyle(0xffffff, 0.95); g.fillTriangle(this.PUMP.x - 130, this.PUMP.y - 150, this.PUMP.x - 160, this.PUMP.y - 190, this.PUMP.x - 100, this.PUMP.y - 190);
   }
 }

@@ -27,7 +27,7 @@ export function SummaryOverlay() {
   const loadPatients = useGame(s => s.loadPatients);
   const dialog = useDataStore(s => s.dialog);
   const openDex = useUI(s => s.openDex);
-  const locked = useLock(1200);
+  const locked = useLock('long');
   const card = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');

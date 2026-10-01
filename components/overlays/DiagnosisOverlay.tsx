@@ -26,7 +26,7 @@ function Diagnosis({ patient }: { patient: Patient }) {
   const next = useGame(s => s.next);
   const stars = useGame(s => s.records[patient.id]?.stars ?? 0);
   const dialog = useDataStore(s => s.dialog);
-  const locked = useLock(1200);
+  const locked = useLock('long');
   const law = lawOf(patient.variable);
 
   useEffect(() => {

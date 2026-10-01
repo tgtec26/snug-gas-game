@@ -27,7 +27,7 @@ function Clinic() {
   const enterExam = useGame(s => s.enterExam);
   const next = useGame(s => s.next);
   const patients = useDataStore(s => s.patients);
-  const locked = useLock(700);
+  const locked = useLock('short');
   const stage = useRef<HTMLDivElement>(null);
   const start = useRef({ x: 0, y: 0 });
   const suppressClick = useRef(false);

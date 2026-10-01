@@ -31,7 +31,8 @@ export interface ShakeLayout {
   gauge: { x: number; y: number; w: number; h: number };
   hand: { x: number; y: number };
 }
-export interface Layout { clinic: ClinicLayout; dip: DipLayout; shake: ShakeLayout }
+export interface FinaleLayout { pump: { x: number; y: number }; pad: { x: number; y: number } }
+export interface Layout { clinic: ClinicLayout; dip: DipLayout; shake: ShakeLayout; finale: FinaleLayout }
 
 const COORD = new Set(['x', 'y', 'top', 'bottom']);
 
@@ -80,6 +81,7 @@ export function validateLayout(l: Layout): string[] {
       if (!(c.beaker.w > c.barrel.w)) errs.push('clinic.beaker: 통이 주사기보다 넓어야 한다');
     }
   } else errs.push('clinic 배치가 없다');
+  if (!l.finale) errs.push('finale 배치가 없다');
   const sh = l.shake;
   if (!sh) errs.push('shake 배치가 없다');
   else if (!(sh.bottle.minX < sh.bottle.maxX)) errs.push('shake.bottle: 이동 범위가 거꾸로다');

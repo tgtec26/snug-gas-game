@@ -8,7 +8,6 @@ import { playSfx } from '@/game/audio';
 import { Story } from '@/components/overlays/StoryOverlay';
 import { PatientIcon } from '@/components/art/PatientIcon';
 
-const STORY_MS = 1800;   // 사연 장면 (스펙 6-6: 1.5초 남짓)
 
 export function EmergencyOverlay() {
   const phase = useGame(s => s.phase);
@@ -17,10 +16,11 @@ export function EmergencyOverlay() {
   const roundReady = useGame(s => s.roundReady);
   const startRound = useGame(s => s.startRound);
   const log = useGame(s => s.emergencyLog);
+  const storyMs = useDataStore(s => s.minigame?.emergencyStoryMs ?? 1800);
   if (phase !== 'emergency' || !patient) return null;
   return (
     <>
-      {!roundReady && <Story key={`${patient.id}-${log.length}`} patient={patient} endMs={STORY_MS} onDone={startRound} />}
+      {!roundReady && <Story key={`${patient.id}-${log.length}`} patient={patient} endMs={storyMs} onDone={startRound} />}
       <Round key={`r-${patient.id}-${log.length}`} />
     </>
   );
