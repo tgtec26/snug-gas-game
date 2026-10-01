@@ -9,6 +9,9 @@ export interface ClinicLayout {
   patient: { x: number; y: number; size: number };
   reset: { x: number; y: number };
   graph: { x: number; y: number; w: number; h: number };
+  lens: { x: number; y: number };                        // 렌즈 아이콘이 놓인 자리
+  lensView: { x: number; y: number; w: number; h: number }; // 확대 보기 창
+  lensZone: { x: number; y: number; w: number; h: number }; // 렌즈를 대는 검사 장치 영역
 }
 export interface DipLayout {
   hot: { x: number; top: number; bottom: number; w: number };
@@ -19,6 +22,9 @@ export interface DipLayout {
   gloves: { x: number; y: number };
   goggles: { x: number; y: number };
   thermo: { x: number; y: number; h: number };
+  lens: { x: number; y: number };
+  lensView: { x: number; y: number; w: number; h: number };
+  lensZone: { x: number; y: number; w: number; h: number };
 }
 export interface Layout { clinic: ClinicLayout; dip: DipLayout }
 
@@ -35,6 +41,9 @@ const REQUIRED: Record<keyof ClinicLayout, string[]> = {
   patient: ['x', 'y', 'size'],
   reset: ['x', 'y'],
   graph: ['x', 'y', 'w', 'h'],
+  lens: ['x', 'y'],
+  lensView: ['x', 'y', 'w', 'h'],
+  lensZone: ['x', 'y', 'w', 'h'],
 };
 
 /** 오류 문자열 목록. 좌표는 무대 안, 크기는 0보다 커야 하고, 통이 주사기를 감싸야 한다. */

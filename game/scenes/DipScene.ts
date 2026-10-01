@@ -7,6 +7,7 @@ import { playSfx } from '@/game/audio';
 import { createExam, tickExam, examResult, type ExamState, type ExamEvent } from '@/game/exam';
 import { resolveSyringe, stepDip, waterTopY, type DipResolved, type Beaker } from '@/game/dip';
 import { deviceVolume, stepTargetVolume } from '@/game/rules';
+import { LensView } from '@/game/systems/lens';
 import type { Experiments, Patient } from '@/game/types';
 import type { DipLayout, ClinicLayout } from '@/game/layout';
 
@@ -45,6 +46,7 @@ export class DipScene extends Phaser.Scene {
   private stepStartAt = 0;
   private finishing = false;
   private finishTimer: number | null = null;
+  private lens!: LensView;
 
   constructor() { super({ key: 'Dip' }); }
 
@@ -94,6 +96,12 @@ export class DipScene extends Phaser.Scene {
     };
     window.addEventListener('keydown', onKey);
     this.events.once('shutdown', () => window.removeEventListener('keydown', onKey));
+    this.lens = new LensView(this, {
+      icon: this.L.lens, view: this.L.lensView, zone: this.L.lensZone, cfg: this.cfg,
+      rules: data.particleRules, count: data.minigame.particleCount,
+      getDevice: () => ({ device: this.st.device, used: this.st.used }),
+      onObserved: () => { playSfx('correct'); this.sparkle(this.L.lensView.x + this.L.lensView.w / 2, this.L.lensView.y + 40, 12); },
+    });
     this.draw();
   }
 
@@ -151,6 +159,7 @@ export class DipScene extends Phaser.Scene {
     this.st = r.state;
     for (const e of r.events) this.onEvent(e);
     this.draw();
+    this.lens.update(dt);
   }
 
   private say(text: string, ms = 2200) { this.hintText.setText(text).setAlpha(1); this.hintUntil = performance.now() + ms; }

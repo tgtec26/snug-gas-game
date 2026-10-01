@@ -1,5 +1,6 @@
 {
   "examTimeLimitMs": 60000,
   "hintIdleMs": 4000,
-  "successHoldMs": 900
+  "successHoldMs": 900,
+  "particleCount": 14
 }

@@ -25,13 +25,14 @@ export type ExamEvent =
   | { type: 'wrong-gauge' }
   | { type: 'all-done' };
 
-export interface MinigameConfig { examTimeLimitMs: number; hintIdleMs: number; successHoldMs: number }
+export interface MinigameConfig { examTimeLimitMs: number; hintIdleMs: number; successHoldMs: number; particleCount: number }
 
 export function validateMinigame(c: MinigameConfig): string[] {
   const errs: string[] = [];
   for (const k of ['examTimeLimitMs', 'hintIdleMs', 'successHoldMs'] as const) {
     if (typeof c[k] !== 'number' || !(c[k] > 0)) errs.push(`${k}는 0보다 커야 한다`);
   }
+  if (!Number.isInteger(c.particleCount) || !(c.particleCount > 0)) errs.push('particleCount는 0보다 큰 정수여야 한다');
   return errs;
 }
 
