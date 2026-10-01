@@ -11,6 +11,8 @@ import { ClinicOverlay } from '@/components/overlays/ClinicOverlay';
 import { StoryOverlay } from '@/components/overlays/StoryOverlay';
 import { DiagnosisOverlay } from '@/components/overlays/DiagnosisOverlay';
 import { EmergencyOverlay } from '@/components/overlays/EmergencyOverlay';
+import { SummaryOverlay } from '@/components/overlays/SummaryOverlay';
+import { DexOverlay } from '@/components/overlays/DexOverlay';
 import { useGame } from '@/game/store';
 import type { Phase } from '@/game/types';
 
@@ -28,7 +30,7 @@ export const OVERLAYS: Record<Phase, ComponentType> = {
   diagnosis: DiagnosisOverlay,
   emergency: EmergencyOverlay,
   ending: Pending,      // Task 14
-  result: Pending,      // Task 14
+  result: SummaryOverlay,
 };
 
 /** 1280×800 네이티브 좌표. 루트는 클릭을 통과시키고 각 오버레이가 pointer-events-auto를 켠다. */
@@ -40,6 +42,7 @@ export function UIOverlay() {
       <HUD />
       <Current />
       <DevSkip />
+      <DexOverlay />
       <TopControls />
       <AudioRunner />
     </div>

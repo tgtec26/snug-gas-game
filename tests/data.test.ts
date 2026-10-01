@@ -3,12 +3,15 @@ import experiments from '../public/data/experiments.json';
 import patients from '../public/data/patients.json';
 import particleRules from '../public/data/particle-rules.json';
 import dialog from '../public/data/dialog-config.json';
-import type { Experiments, ParticleRule, Patient } from '../game/types';
+import people from '../public/data/people.json';
+import homework from '../public/data/homework-cards.json';
+import type { Experiments, ParticleRule, Patient, Person, HomeworkCard } from '../game/types';
 import { validateDataset, sentenceCount, FORBIDDEN, type Dataset } from '../game/validators';
 
 const real = {
   patients: patients as unknown as Patient[], experiments: experiments as unknown as Experiments,
   particleRules: particleRules as unknown as ParticleRule[], dialog: dialog as Record<string, unknown>,
+  people: people as Person[], homework: homework as HomeworkCard[],
 } satisfies Dataset;
 
 describe('실제 데이터', () => {
@@ -21,6 +24,15 @@ describe('실제 데이터', () => {
 
 describe('검증기가 실제로 잡는다', () => {
   const clone = () => structuredClone(real) as Dataset;
+  it('숙제 카드에 답 필드가 들어가면', () => {
+    const d = clone(); (d.homework as unknown as Record<string, unknown>[])[0].answer = '...'; expect(validateDataset(d).join()).toContain('답');
+  });
+  it('인물 카드에 금지어가 들어가면', () => {
+    const d = clone(); d.people![0].line = '분자를 발견했어요.'; expect(validateDataset(d).join()).toContain('금지어');
+  });
+  it('인물은 보일·샤를, 숙제 카드는 5장', () => {
+    expect(real.people!.map(p => p.id)).toEqual(['boyle', 'charles']); expect(real.homework).toHaveLength(5);
+  });
   it('verified:false', () => { const d = clone(); d.patients[0].verified = false; expect(validateDataset(d).join()).toContain('verified'); });
   it('금지어가 대사에 들어가면', () => { const d = clone(); (d.dialog.intro as string[])[0] = '기체 분자는 움직여요.'; expect(validateDataset(d).join()).toContain('금지어'); });
   it('대사가 3문장이면', () => { const d = clone(); (d.dialog.intro as string[])[0] = '하나예요. 둘이에요. 셋이에요.'; expect(validateDataset(d).join()).toContain('2문장'); });

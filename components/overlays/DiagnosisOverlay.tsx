@@ -32,6 +32,7 @@ function Diagnosis({ patient }: { patient: Patient }) {
   useEffect(() => {
     addToDex('patients', patient.id);
     addToDex('laws', law);
+    addToDex('people', law);
     playSfx('success');
   }, [patient.id, law]);
 

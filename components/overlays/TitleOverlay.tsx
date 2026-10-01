@@ -1,11 +1,13 @@
 'use client';
 
 import { useGame } from '@/game/store';
+import { useUI } from '@/game/ui';
 
 /** 시작 조작이 곧 전체 화면 요청이다(별도 안내 단계 없음). start()는 title에서만 동작해 연타해도 한 번만 진행한다. */
 export function TitleOverlay() {
   const phase = useGame(s => s.phase);
   const start = useGame(s => s.start);
+  const openDex = useUI(s => s.openDex);
   if (phase !== 'title') return null;
 
   return (
@@ -23,6 +25,7 @@ export function TitleOverlay() {
       >
         진료 시작
       </button>
+      <button type="button" onClick={openDex} className="mt-6 text-[22px] px-6 h-[52px] rounded-xl bg-white/90 text-slate-900 font-bold border-4 border-amber-300">진료 기록부</button>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { Experiments, ParticleRule, Patient } from './types';
+import type { Experiments, ParticleRule, Patient, Person, HomeworkCard } from './types';
 import { stepTargetVolume } from './rules';
 
 /** 교과서에 없어서 쓰지 않는 말 (발췌 2-9) */
@@ -17,6 +17,7 @@ export function sentenceCount(s: string): number {
 
 export interface Dataset {
   patients: Patient[]; experiments: Experiments; particleRules: ParticleRule[]; dialog: Record<string, unknown>;
+  people?: Person[]; homework?: HomeworkCard[];
 }
 
 /** 오류 문자열 목록. 비어 있어야 게임을 시작할 수 있다. */
@@ -46,7 +47,11 @@ export function validateDataset(d: Dataset): string[] {
   for (const v of ['pressure', 'temperature'] as const) for (const c of ['up', 'down'] as const) {
     if (!d.particleRules.some(r => r.variable === v && r.change === c)) errs.push(`입자 규칙 없음: ${v} ${c}`);
   }
-  for (const s of collectStrings(d.patients).concat(collectStrings(d.dialog))) {
+  for (const h of d.homework ?? []) {
+    if (Object.keys(h).some(k => !['id', 'title', 'pages'].includes(k))) errs.push(`숙제 카드 ${h.id}: 제목과 쪽수 외의 필드(답)는 둘 수 없다`);
+    if (!h.pages.length) errs.push(`숙제 카드 ${h.id}: 쪽수가 없다`);
+  }
+  for (const s of collectStrings(d.patients).concat(collectStrings(d.dialog), collectStrings(d.people ?? []), collectStrings(d.homework ?? []))) {
     for (const w of FORBIDDEN) if (s.includes(w)) errs.push(`금지어 "${w}": ${s.slice(0, 30)}`);
   }
   for (const s of collectStrings(d.dialog)) {

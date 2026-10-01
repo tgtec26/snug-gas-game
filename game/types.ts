@@ -53,3 +53,8 @@ export type Phase =
   | 'diagnosis' | 'emergency' | 'ending' | 'result';
 
 export interface ExamRecord { stars: number; wrongGauge: number }
+
+/** 도감의 인물 카드. 교과서에 적힌 내용만 쓴다. */
+export interface Person { id: string; name: string; country: string; years: string; line: string }
+/** 잠긴 숙제 카드: 교과서가 답을 주지 않은 사례. 제목과 쪽수만 있고 답은 없다. */
+export interface HomeworkCard { id: string; title: string; pages: number[] }
