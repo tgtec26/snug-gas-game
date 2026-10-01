@@ -2,5 +2,11 @@
   "examTimeLimitMs": 60000,
   "hintIdleMs": 4000,
   "successHoldMs": 900,
-  "particleCount": 14
+  "particleCount": 14,
+  "shake": {
+    "balls": 20,
+    "gain": 1.2e-06,
+    "decayPerSec": 0.02,
+    "hitMinSpeed": 60
+  }
 }

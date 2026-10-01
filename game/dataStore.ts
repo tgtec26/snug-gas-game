@@ -10,6 +10,7 @@ export interface DialogConfig {
   doctor: { name: string };
   intro: string[];
   diagnosis: { boyle: string[]; charles: string[] };
+  tutorial: { card: string; line: string };
   hints: { wrongGauge: string; gear: string; submerge: string; hold: string; notThere: string };
   ending: string[];
 }

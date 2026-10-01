@@ -26,7 +26,12 @@ export interface DipLayout {
   lensView: { x: number; y: number; w: number; h: number };
   lensZone: { x: number; y: number; w: number; h: number };
 }
-export interface Layout { clinic: ClinicLayout; dip: DipLayout }
+export interface ShakeLayout {
+  bottle: { x: number; y: number; w: number; h: number; minX: number; maxX: number };   // y는 병 바닥
+  gauge: { x: number; y: number; w: number; h: number };
+  hand: { x: number; y: number };
+}
+export interface Layout { clinic: ClinicLayout; dip: DipLayout; shake: ShakeLayout }
 
 const COORD = new Set(['x', 'y', 'top', 'bottom']);
 
@@ -75,6 +80,9 @@ export function validateLayout(l: Layout): string[] {
       if (!(c.beaker.w > c.barrel.w)) errs.push('clinic.beaker: 통이 주사기보다 넓어야 한다');
     }
   } else errs.push('clinic 배치가 없다');
+  const sh = l.shake;
+  if (!sh) errs.push('shake 배치가 없다');
+  else if (!(sh.bottle.minX < sh.bottle.maxX)) errs.push('shake.bottle: 이동 범위가 거꾸로다');
   const d = l.dip;
   if (!d) errs.push('dip 배치가 없다');
   else {

@@ -4,10 +4,11 @@ import { useDataStore } from '@/game/dataStore';
 import type { Kind, Phase } from '@/game/types';
 
 /** 등록된 씬 키. 태스크가 진행되며 Clinic(Task 7), Shake(Task 12), Finale(Task 14)이 더해진다. */
-export type SceneKey = 'Backdrop' | 'Clinic' | 'Dip';
+export type SceneKey = 'Backdrop' | 'Clinic' | 'Dip' | 'Shake';
 
 /** phase → 씬. 검사(exam)는 검사 장치 씬, 나머지 오버레이 위주 phase는 대기실 배경 씬. */
 export function sceneFor(phase: Phase, kind?: Kind): SceneKey {
+  if (phase === 'tutorial') return 'Shake';
   if (phase !== 'exam') return 'Backdrop';
   return kind === 'dip' ? 'Dip' : 'Clinic';
 }

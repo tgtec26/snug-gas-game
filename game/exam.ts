@@ -1,5 +1,6 @@
 import type { Device, Experiments, Patient, Variable } from './types';
 import type { Reading } from './rules';
+import { validateShake, type ShakeConfig } from './shake';
 import { canUse, checkPistonRun, clamp, matchStep } from './rules';
 
 /** 한 진료(환자 하나)의 진행 상태. 순수 데이터라 Phaser 없이 테스트한다. */
@@ -25,13 +26,14 @@ export type ExamEvent =
   | { type: 'wrong-gauge' }
   | { type: 'all-done' };
 
-export interface MinigameConfig { examTimeLimitMs: number; hintIdleMs: number; successHoldMs: number; particleCount: number }
+export interface MinigameConfig { examTimeLimitMs: number; hintIdleMs: number; successHoldMs: number; particleCount: number; shake: ShakeConfig }
 
 export function validateMinigame(c: MinigameConfig): string[] {
   const errs: string[] = [];
   for (const k of ['examTimeLimitMs', 'hintIdleMs', 'successHoldMs'] as const) {
     if (typeof c[k] !== 'number' || !(c[k] > 0)) errs.push(`${k}는 0보다 커야 한다`);
   }
+  errs.push(...validateShake(c.shake));
   if (!Number.isInteger(c.particleCount) || !(c.particleCount > 0)) errs.push('particleCount는 0보다 큰 정수여야 한다');
   return errs;
 }
