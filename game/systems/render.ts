@@ -46,6 +46,8 @@ export const ART: Record<string, string> = {
   'props/pumphandle.webp': 'sp_pumphandle',
   'props/pad.webp': 'sp_pad',
   'bg/finale.webp': 'finale_bg',
+  'bg/rig_clinic.webp': 'rig_clinic',
+  'bg/rig_dip.webp': 'rig_dip',
   'story/sit-on-ball.webp': 'story_sit-on-ball',
   'story/mountain.webp': 'story_mountain',
   'story/cold-outside.webp': 'story_cold-outside',

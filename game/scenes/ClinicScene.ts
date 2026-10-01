@@ -58,8 +58,11 @@ export class ClinicScene extends Phaser.Scene {
   private lastPistonVol = 0;
   private lastPistonSound = 0;
   private lens!: LensView;
+  private gxLabel!: Phaser.GameObjects.Text;
+  private gyLabel!: Phaser.GameObjects.Text;
+  private gHand!: Phaser.GameObjects.Graphics;
   private goal!: GoalBanner;
-  private sp!: Record<'barrel' | 'beaker' | 'grip' | 'gauge' | 'thermo' | 'knob', Phaser.GameObjects.Image>;
+  private sp!: { grip: Phaser.GameObjects.Image };
   private GRIP_ASPECT = 3.24;
   private stepStartAt = 0;
 
@@ -67,7 +70,7 @@ export class ClinicScene extends Phaser.Scene {
 
   create() {
     hiDpi(this);
-    addBg(this, 'exam_bg', 'exam_bg_ph');
+    addBg(this, 'rig_clinic', 'exam_bg_ph');
     attachRouter(this);
 
     const data = useDataStore.getState();
@@ -82,8 +85,10 @@ export class ClinicScene extends Phaser.Scene {
 
     this.g = this.add.graphics().setDepth(10);
     this.goal = new GoalBanner(this, inEmergency() ? 764 : 44);
-    const im = (k: string, d: number) => this.add.image(0, 0, `sp_${k}`).setDepth(d);
-    this.sp = { barrel: im('barrel', 11), beaker: im('beaker', 8), grip: im('grip', 13), gauge: im('gauge', 9), thermo: im('thermo', 9), knob: im('knob', 9) };
+    this.gHand = this.add.graphics().setDepth(45);
+    const lab = (t: string) => this.add.text(0, 0, t, { ...TEXT, fontSize: '18px', fontStyle: 'bold', color: '#37474f' }).setOrigin(0.5).setDepth(11).setVisible(false);
+    this.gxLabel = lab('부피'); this.gyLabel = lab('압력').setAngle(-90);
+    this.sp = { grip: this.add.image(0, 0, 'sp_grip').setDepth(13) };
     this.GRIP_ASPECT = 366 / 113;
     const key = this.textures.exists(`patient_${patient.id}`) ? `patient_${patient.id}` : `patient_${patient.id}_ph`;
     const p = this.L.patient;
@@ -266,42 +271,28 @@ export class ClinicScene extends Phaser.Scene {
   // ── 그리기 (3/4 시점: 그림자, 원통의 타원 윗면, 앞뒤 겹침) ──────────────
   private draw() {
     const g = this.g; const L = this.L; const cfg = this.cfg; const st = this.st; const now = performance.now();
-    g.clear();
+    g.clear(); this.gHand.clear(); this.gxLabel.setVisible(false); this.gyLabel.setVisible(false);
     const vol = deviceVolume(cfg, st.device);
     const held = heldConstant(cfg, st.device);
     const b = L.barrel, bk = L.beaker;
     const waterT = (st.device.tempStep - cfg.temp.minStep) / (cfg.temp.maxStep - cfg.temp.minStep);
     const waterColor = waterColorAt(waterT);
 
-    // 바닥 그림자
-    g.fillStyle(0x000000, 0.22); g.fillEllipse(bk.x, bk.bottom + 12, bk.w + 70, 34);
-    g.fillEllipse(L.dial.x, L.dial.y + L.dial.r * 0.55, L.dial.r * 2.4, 34);
-    g.fillEllipse(L.gauge.x, L.gauge.y + L.gauge.size * 0.52, L.gauge.size * 0.9, 26);
-    g.fillEllipse(L.thermo.x, L.thermo.y + L.thermo.h + 18, 70, 18);
+    // 고정 장치(비커·주사기 통·계기·온도계·다이얼)는 배경 그림(rig_clinic)이 맡고, 여기서는 움직이는 것만 그린다.
+    // 물: 비커 안쪽에 온도에 따른 색을 얹는다(그림 속 주사기 통이 물에 잠긴 것처럼 보인다)
+    const ry = 22; const wl = bk.top + 46; const ww = bk.w - 14;
+    g.fillStyle(waterColor, 0.5); g.fillRect(bk.x - ww / 2, wl, ww, bk.bottom - wl - 8); g.fillEllipse(bk.x, bk.bottom - 8, ww, ry * 1.5);
+    g.fillStyle(waterColorAt(waterT, true), 0.6); g.fillEllipse(bk.x, wl, ww, ry * 1.5);
 
-    // 받침대 기둥
-    g.fillStyle(0x78909c, 1); g.fillRect(bk.x - bk.w / 2 - 34, bk.top - 70, 14, bk.bottom - bk.top + 70 + 6);
-    g.fillRoundedRect(bk.x - bk.w / 2 - 34, bk.top - 70, 100, 12, 6);
-
-    // 통(비커): 뒷벽 → 물 → 앞 유리
-    const ry = 22;
-    g.fillStyle(waterColor, 0.72); g.fillRect(bk.x - bk.w / 2 + 4, bk.top + 46, bk.w - 8, bk.bottom - bk.top - 46);
-    g.fillEllipse(bk.x, bk.bottom, bk.w - 8, ry * 1.6);
-    g.fillStyle(waterColorAt(waterT, true), 0.85); g.fillEllipse(bk.x, bk.top + 46, bk.w - 8, ry * 1.6);
-
-    // 주사기 통: 뒤쪽 타원, 몸통, 기체
+    // 주사기 속 기체: 피스톤 머리부터 바닥까지
     const headY = this.headY(vol);
-    g.fillStyle(0xbfe6f7, 0.75); g.fillRect(b.x - b.w / 2 + 4, headY, b.w - 8, b.bottom - headY); g.fillEllipse(b.x, b.bottom, b.w - 8, 14);
-    // 눈금 (숫자는 쓰지 않는다)
+    g.fillStyle(0xcdeefc, 0.7); g.fillRect(b.x - b.w / 2 + 6, headY, b.w - 12, b.bottom - headY);
+    // 눈금은 통 안쪽 오른쪽 가장자리에 (숫자는 쓰지 않는다)
     g.lineStyle(2, 0x455a64, 0.9);
     for (let v = cfg.syringe.min; v <= cfg.syringe.max; v++) {
       const y = this.headY(v); const long = (v - cfg.syringe.min) % 4 === 0;
-      g.lineBetween(b.x + b.w / 2, y, b.x + b.w / 2 + (long ? 16 : 9), y);
+      g.lineBetween(b.x + b.w / 2 - 3, y, b.x + b.w / 2 - (long ? 20 : 11), y);
     }
-    // 노즐과 관(압력 센서로)
-    g.lineStyle(7, 0x78909c, 1);
-    const curve = new Phaser.Curves.CubicBezier(new Phaser.Math.Vector2(b.x, b.bottom + 18), new Phaser.Math.Vector2(b.x, b.bottom + 70), new Phaser.Math.Vector2(L.gauge.x - 40, L.gauge.y + L.gauge.size * 0.55 + 40), new Phaser.Math.Vector2(L.gauge.x, L.gauge.y + L.gauge.size * 0.5));
-    curve.draw(g, 32);
 
     // 목표 모양 띠 (고스트): 이번 step의 목표 머리 높이
     const tv = stepTargetVolume(cfg, this.patient, st.stepIndex);
@@ -322,10 +313,6 @@ export class ClinicScene extends Phaser.Scene {
     const pLocked = held === 'pressure';   // 온도를 쓰는 중이면 압력이 일정하다: 피스톤이 잠긴다
     const gw = hw * 1.06;
     this.sp.grip.setPosition(b.x + shakeX, hcy).setDisplaySize(gw, gw / this.GRIP_ASPECT * (hh / L.piston.handleH)).setTint(pLocked ? 0x9aa7ad : 0xffffff);
-
-    // 비커·주사기 통은 그림(앞 유리가 물과 주사기 위로 겹친다)
-    this.sp.beaker.setPosition(bk.x, (bk.top - ry + bk.bottom + ry) / 2).setDisplaySize(bk.w + 16, bk.bottom - bk.top + 2 * ry);
-    this.sp.barrel.setPosition(b.x, (b.top - 14 + b.bottom + 22) / 2).setDisplaySize(b.w * 1.47, b.bottom - b.top + 36);
 
     this.drawGauge(g);
     this.drawThermo(g);
@@ -358,12 +345,14 @@ export class ClinicScene extends Phaser.Scene {
   private drawGraph(g: Phaser.GameObjects.Graphics, now: number) {
     const { x, y, w, h } = this.L.graph; const m = this.cfg.measure;
     const lo = needleFromVolume(m.from, this.cfg.syringe.start), hi = needleFromVolume(m.to, this.cfg.syringe.start);
-    const px = (v: number) => x + 22 + ((v - m.to) / (m.from - m.to)) * (w - 44);
-    const py = (n: number) => y + h - 24 - ((n - lo) / (hi - lo)) * (h - 52);
+    const px = (v: number) => x + 46 + ((v - m.to) / (m.from - m.to)) * (w - 70);
+    const py = (n: number) => y + h - 44 - ((n - lo) / (hi - lo)) * (h - 70);
     g.fillStyle(0x000000, 0.2); g.fillRoundedRect(x + 6, y + 8, w, h, 12);
     g.fillStyle(0xfdfcf7, 0.96); g.fillRoundedRect(x, y, w, h, 12); g.lineStyle(3, 0x546e7a, 1); g.strokeRoundedRect(x, y, w, h, 12);
-    g.lineStyle(3, 0x546e7a, 1); g.lineBetween(x + 12, y + 12, x + 12, y + h - 12); g.lineBetween(x + 12, y + h - 12, x + w - 12, y + h - 12);
-    const pts = this.st.readings.filter(r => r.dwellMs >= m.dwellMs).sort((a, b) => b.volume - a.volume)
+    g.lineStyle(3, 0x546e7a, 1); g.lineBetween(x + 34, y + 14, x + 34, y + h - 30); g.lineBetween(x + 34, y + h - 30, x + w - 12, y + h - 30);
+    g.fillStyle(0x546e7a, 1); g.fillTriangle(x + 34, y + 8, x + 28, y + 20, x + 40, y + 20); g.fillTriangle(x + w - 6, y + h - 30, x + w - 18, y + h - 36, x + w - 18, y + h - 24);
+    this.gxLabel.setPosition(x + (w + 34) / 2, y + h - 12).setVisible(true); this.gyLabel.setPosition(x + 17, y + (h - 30) / 2).setVisible(true);
+    const pts = this.st.readings.filter(r => r.dwellMs >= m.dwellMs && r.volume >= m.to && r.volume <= m.from).sort((a, b) => b.volume - a.volume)
       .map(r => ({ v: r.volume, X: px(r.volume), Y: py(needleFromVolume(r.volume, this.cfg.syringe.start)) }));
     if (pts.length > 1) {
       g.lineStyle(3, 0xc0506a, 0.5); g.beginPath(); g.moveTo(pts[0].X, pts[0].Y);
@@ -377,12 +366,11 @@ export class ClinicScene extends Phaser.Scene {
   }
 
   private drawGauge(g: Phaser.GameObjects.Graphics) {
-    const { x, y, size } = this.L.gauge; const r = size / 2;
-    this.sp.gauge.setPosition(x, y - r + (size * 1.228) / 2).setDisplaySize(size, size * 1.228);
+    const { x, y, size } = this.L.gauge; const f = (size / 2) * 0.86;   // 그림 속 계기 흰 바탕의 반지름
     g.lineStyle(4, 0x546e7a, 1);
     for (let i = 0; i <= 10; i++) {
       const a = ((-ANGLE + (i / 10) * 2 * ANGLE) * Math.PI) / 180;
-      const r1 = r - 26, r2 = r - (i % 5 === 0 ? 14 : 19);
+      const r1 = f * 0.66, r2 = f * (i % 5 === 0 ? 0.9 : 0.8);
       g.lineBetween(x + Math.sin(a) * r1, y - Math.cos(a) * r1, x + Math.sin(a) * r2, y - Math.cos(a) * r2);
     }
     // 목표 눈금 고스트 (압력 환자만): 이번 step의 목표 바늘 위치
@@ -390,16 +378,15 @@ export class ClinicScene extends Phaser.Scene {
       const ta = (this.targetAngle(stepTargetVolume(this.cfg, this.patient, this.st.stepIndex)) * Math.PI) / 180;
       const pulse = 0.65 + 0.3 * Math.sin(performance.now() / 260);
       g.fillStyle(0xffc933, pulse);
-      g.fillTriangle(x + Math.sin(ta) * (r - 4), y - Math.cos(ta) * (r - 4), x + Math.sin(ta - 0.12) * (r - 24), y - Math.cos(ta - 0.12) * (r - 24), x + Math.sin(ta + 0.12) * (r - 24), y - Math.cos(ta + 0.12) * (r - 24));
+      g.fillTriangle(x + Math.sin(ta) * (f * 0.96), y - Math.cos(ta) * (f * 0.96), x + Math.sin(ta - 0.12) * (f * 0.74), y - Math.cos(ta - 0.12) * (f * 0.74), x + Math.sin(ta + 0.12) * (f * 0.74), y - Math.cos(ta + 0.12) * (f * 0.74));
     }
     const na = (this.angleOfReading(pressureReading(this.cfg, this.st.device)) * Math.PI) / 180;
-    g.lineStyle(7, 0xc0506a, 1); g.lineBetween(x, y, x + Math.sin(na) * (r - 30), y - Math.cos(na) * (r - 30));
+    g.lineStyle(7, 0xc0506a, 1); g.lineBetween(x, y, x + Math.sin(na) * (f * 0.78), y - Math.cos(na) * (f * 0.78));
     g.fillStyle(0x546e7a, 1); g.fillCircle(x, y, 10);
   }
 
   private drawThermo(g: Phaser.GameObjects.Graphics) {
     const { x, y, h } = this.L.thermo; const cfg = this.cfg;
-    this.sp.thermo.setPosition(x, y + (h + 52) / 2 - 8).setDisplaySize(60, h + 60);
     const t01 = (this.st.device.tempStep - cfg.temp.minStep) / (cfg.temp.maxStep - cfg.temp.minStep);
     const mh = 20 + t01 * (h - 40);
     g.fillStyle(0xe0513f, 1); g.fillCircle(x, y + h + 10, 15);
@@ -417,25 +404,28 @@ export class ClinicScene extends Phaser.Scene {
 
   private drawDial(g: Phaser.GameObjects.Graphics, locked: boolean, now: number) {
     const { x, y, r } = this.L.dial;
+    const SQ = 0.6;   // 그림 속 다이얼은 비스듬히 본 타원이라 위아래를 눌러 그린다
     const sx = now < this.shake.dial ? Math.sin(now / 25) * 6 : 0;
     const lift = this.drag?.kind === 'dial' ? 1 : 0;
-    const X = x + sx;
-    this.sp.knob.setPosition(X, y - lift * 4).setDisplaySize((r + 14) * 2, (r + 14) * 2).setTint(locked ? 0x9aa7ad : 0xffffff);
-    // 눈금 호: 파랑(낮춤)에서 빨강(높임)까지
+    const X = x + sx; const cy = y - lift * 4;
+    if (locked) { g.fillStyle(0x90a4ae, 0.45); g.fillEllipse(X, cy - 4, r * 2.1, r * 2.1 * SQ); }   // 잠기면 흐려진다
+    // 눈금 점: 파랑(낮춤)에서 빨강(높임)까지, 다이얼 테두리 위
     for (let i = 0; i <= 16; i++) {
       const t = i / 16; const a = ((-ANGLE + t * 2 * ANGLE) * Math.PI) / 180;
       g.fillStyle(lerpColor(0x57b7e8, 0xe8684a, t), locked ? 0.35 : 1);
-      g.fillCircle(X + Math.sin(a) * (r + 2), y - Math.cos(a) * (r + 2), 4.5);
+      g.fillCircle(X + Math.sin(a) * (r + 6), cy - 4 - Math.cos(a) * (r + 6) * SQ, 5.5);
     }
     const a = (this.tempToAngle(this.st.device.tempStep) * Math.PI) / 180;
-    g.lineStyle(9, 0x37474f, 1); g.lineBetween(X, y - lift * 4, X + Math.sin(a) * (r - 22), y - Math.cos(a) * (r - 22) - lift * 4);
-    g.fillStyle(0x37474f, 1); g.fillCircle(X, y - lift * 4, 9);
+    g.lineStyle(9, 0x37474f, 1); g.lineBetween(X, cy - 6, X + Math.sin(a) * (r - 20), cy - 6 - Math.cos(a) * (r - 20) * SQ);
+    g.fillStyle(0x37474f, 1); g.fillCircle(X, cy - 6, 9);
     if (this.patient.variable === 'temperature') {
       const step = this.patient.steps[this.st.stepIndex];
       const ts = step.change === 'up' ? step.size : -step.size;
       const ta = (this.tempToAngle(ts) * Math.PI) / 180;
       g.fillStyle(0xffc933, 0.65 + 0.3 * Math.sin(now / 260));
-      g.fillTriangle(X + Math.sin(ta) * (r + 26), y - Math.cos(ta) * (r + 26), X + Math.sin(ta - 0.14) * (r + 50), y - Math.cos(ta - 0.14) * (r + 50), X + Math.sin(ta + 0.14) * (r + 50), y - Math.cos(ta + 0.14) * (r + 50));
+      const P = (rr: number, da: number) => [X + Math.sin(ta + da) * rr, cy - 4 - Math.cos(ta + da) * rr * SQ];
+      const t0 = P(r + 18, 0), t1 = P(r + 44, -0.14), t2 = P(r + 44, 0.14);
+      g.fillTriangle(t0[0], t0[1], t1[0], t1[1], t2[0], t2[1]);
     }
   }
 
@@ -500,9 +490,9 @@ export class ClinicScene extends Phaser.Scene {
         const a = ((a0 + (a1 - a0) * e) * Math.PI) / 180;
         hx = L.dial.x + Math.sin(a) * (L.dial.r - 26) + 10; hy = L.dial.y - Math.cos(a) * (L.dial.r - 26) + 14;
       }
-      g.fillStyle(0xffffff, 1); g.lineStyle(3, 0x263238, 1);
-      g.fillPoints([new Phaser.Math.Vector2(hx, hy), new Phaser.Math.Vector2(hx, hy + 38), new Phaser.Math.Vector2(hx + 9, hy + 30), new Phaser.Math.Vector2(hx + 16, hy + 44), new Phaser.Math.Vector2(hx + 23, hy + 40), new Phaser.Math.Vector2(hx + 16, hy + 27), new Phaser.Math.Vector2(hx + 28, hy + 27)], true);
-      g.strokePoints([new Phaser.Math.Vector2(hx, hy), new Phaser.Math.Vector2(hx, hy + 38), new Phaser.Math.Vector2(hx + 9, hy + 30), new Phaser.Math.Vector2(hx + 16, hy + 44), new Phaser.Math.Vector2(hx + 23, hy + 40), new Phaser.Math.Vector2(hx + 16, hy + 27), new Phaser.Math.Vector2(hx + 28, hy + 27)], true);
+      this.gHand.fillStyle(0xffffff, 1); this.gHand.lineStyle(3, 0x263238, 1);
+      this.gHand.fillPoints([new Phaser.Math.Vector2(hx, hy), new Phaser.Math.Vector2(hx, hy + 38), new Phaser.Math.Vector2(hx + 9, hy + 30), new Phaser.Math.Vector2(hx + 16, hy + 44), new Phaser.Math.Vector2(hx + 23, hy + 40), new Phaser.Math.Vector2(hx + 16, hy + 27), new Phaser.Math.Vector2(hx + 28, hy + 27)], true);
+      this.gHand.strokePoints([new Phaser.Math.Vector2(hx, hy), new Phaser.Math.Vector2(hx, hy + 38), new Phaser.Math.Vector2(hx + 9, hy + 30), new Phaser.Math.Vector2(hx + 16, hy + 44), new Phaser.Math.Vector2(hx + 23, hy + 40), new Phaser.Math.Vector2(hx + 16, hy + 27), new Phaser.Math.Vector2(hx + 28, hy + 27)], true);
     }
   }
 }

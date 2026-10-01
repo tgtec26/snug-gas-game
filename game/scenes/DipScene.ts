@@ -51,18 +51,20 @@ export class DipScene extends Phaser.Scene {
   private finishing = false;
   private finishTimer: number | null = null;
   private lens!: LensView;
+  private gHand!: Phaser.GameObjects.Graphics;
+  private gWater!: Phaser.GameObjects.Graphics;
   private goal!: GoalBanner;
   private sp!: {
-    barrel: Phaser.GameObjects.Image; beakerHot: Phaser.GameObjects.Image; beakerCold: Phaser.GameObjects.Image; grip: Phaser.GameObjects.Image;
+    barrel: Phaser.GameObjects.Image; grip: Phaser.GameObjects.Image;
     kid: Phaser.GameObjects.Image; gogglesWorn: Phaser.GameObjects.Image; gloveL: Phaser.GameObjects.Image; gloveR: Phaser.GameObjects.Image;
-    thermo: Phaser.GameObjects.Image; gloveTray: Phaser.GameObjects.Image; gogglesTray: Phaser.GameObjects.Image; ice: Phaser.GameObjects.Image[];
+    gloveTray: Phaser.GameObjects.Image; gogglesTray: Phaser.GameObjects.Image;
   };
 
   constructor() { super({ key: 'Dip' }); }
 
   create() {
     hiDpi(this);
-    addBg(this, 'exam_bg', 'exam_bg_ph');
+    addBg(this, 'rig_dip', 'exam_bg_ph');
     attachRouter(this);
 
     const data = useDataStore.getState();
@@ -80,11 +82,13 @@ export class DipScene extends Phaser.Scene {
 
     this.g = this.add.graphics().setDepth(10);
     this.goal = new GoalBanner(this, inEmergency() ? 764 : 44);
+    this.gHand = this.add.graphics().setDepth(45);
+    this.gWater = this.add.graphics().setDepth(12);
     const im = (k: string, d: number) => this.add.image(0, 0, `sp_${k}`).setDepth(d);
     this.sp = {
-      barrel: im('barrel', 11), beakerHot: im('beaker', 8), beakerCold: im('beaker', 8), grip: im('grip', 13),
+      barrel: im('barrel', 11), grip: im('grip', 13),
       kid: im('kid', 8), gogglesWorn: im('goggles', 11).setVisible(false), gloveL: im('glove', 11).setVisible(false), gloveR: im('glove', 11).setVisible(false).setFlipX(true),
-      thermo: im('thermo', 9), gloveTray: im('glove', 11), gogglesTray: im('goggles', 11), ice: [0, 1, 2].map(() => im('ice', 11)),
+      gloveTray: im('glove', 11), gogglesTray: im('goggles', 11),
     };
     const key = this.textures.exists(`patient_${patient.id}`) ? `patient_${patient.id}` : `patient_${patient.id}_ph`; const p = this.PL;
     this.ghostImg = this.add.image(p.x, p.y, key).setDepth(9).setTint(0x1b2a33).setTintMode(Phaser.TintModes.FILL).setAlpha(0.28);
@@ -223,10 +227,9 @@ export class DipScene extends Phaser.Scene {
   // ── 그리기 ──────────────────────────────────────────────────
   private draw() {
     const g = this.g; const now = performance.now(); const L = this.L; const cfg = this.cfg;
-    g.clear();
+    g.clear(); this.gHand.clear();
     const vol = deviceVolume(cfg, this.st.device);
-    this.drawBeaker(g, 'cold', now);
-    this.drawBeaker(g, 'hot', now);
+    this.drawBeaker(g, 'cold', now); this.drawBeaker(g, 'hot', now); this.drawSubmergedTint();
     this.drawThermo(g);
     this.drawPerson(g, now);
     this.drawSyringe(g, vol, now);
@@ -237,33 +240,25 @@ export class DipScene extends Phaser.Scene {
     void L;
   }
 
+  /** 비커·얼음·김은 배경 그림(rig_dip)에 있다. 장비 없이 뜨거운 물에 들어가려 하면 비커 테두리가 붉게 깜박인다. */
   private drawBeaker(g: Phaser.GameObjects.Graphics, k: Beaker, now: number) {
-    const b = this.L[k]; const ry = 22; const wt = waterTopY(this.L, k);
-    const sx = now < this.shakeUntil[k] ? Math.sin(now / 25) * 7 : 0; const X = b.x + sx;
-    const hot = k === 'hot';
-    g.fillStyle(0x000000, 0.22); g.fillEllipse(X, b.bottom + 14, b.w + 60, 32);
-    g.fillStyle(hot ? 0xef6f4a : 0x3f9de0, 0.72); g.fillRect(X - b.w / 2 + 4, wt, b.w - 8, b.bottom - wt); g.fillEllipse(X, b.bottom, b.w - 8, ry * 1.6);
-    g.fillStyle(hot ? 0xffc2a0 : 0x9fd7f6, 0.9); g.fillEllipse(X, wt, b.w - 8, ry * 1.6);
-    if (hot) {   // 김
-      g.lineStyle(5, 0xffffff, 0.55);
-      for (let i = -1; i <= 1; i++) {
-        g.beginPath(); g.moveTo(X + i * 50, wt - 10);
-        for (let t = 1; t <= 12; t++) g.lineTo(X + i * 50 + Math.sin(now / 300 + t * 0.8 + i) * 10, wt - 10 - t * 7);
-        g.strokePath();
-      }
-    } else {     // 얼음
-      for (let i = 0; i < 3; i++) {
-        const bob = Math.sin(now / 700 + i * 2) * 3; const ix = X - 54 + i * 54; const iy = wt + 4 + bob;
-        this.sp.ice[i].setPosition(ix, iy).setDisplaySize(46, 47);
-      }
-    }
-    this.sp[k === 'hot' ? 'beakerHot' : 'beakerCold'].setPosition(X, (b.top - ry + b.bottom + ry) / 2).setDisplaySize(b.w + 16, b.bottom - b.top + 2 * ry);
+    const b = this.L[k];
+    if (now < this.shakeUntil[k] && Math.floor(now / 80) % 2 === 0) { g.lineStyle(6, 0xe0513f, 0.9); g.strokeRoundedRect(b.x - b.w / 2 - 8, b.top - 24, b.w + 16, b.bottom - b.top + 50, 16); }
+  }
+
+  /** 주사기가 잠긴 부분에 물 색을 얹어, 그림 속 물에 담긴 것처럼 보이게 한다 */
+  private drawSubmergedTint() {
+    const w = this.gWater; w.clear(); const r = this.res;
+    if (!r.beaker) return;
+    const b = this.L[r.beaker]; const wt = waterTopY(this.L, r.beaker); const sy = this.L.syringe;
+    if (r.y <= wt) return;
+    w.fillStyle(r.beaker === 'hot' ? 0xff6a33 : 0x2f86d6, 0.34);
+    w.fillRect(r.x - sy.w * 0.75, wt, sy.w * 1.5, Math.min(r.y + 6, b.bottom - 14) - wt);
   }
 
   private drawThermo(g: Phaser.GameObjects.Graphics) {
     const { x, y, h } = this.L.thermo; const cfg = this.cfg;
     g.fillStyle(0x000000, 0.2); g.fillEllipse(x, y + h + 40, 70, 18);
-    this.sp.thermo.setPosition(x, y + (h + 52) / 2 - 8).setDisplaySize(60, h + 60);
     const t01 = (this.st.device.tempStep - cfg.temp.minStep) / (cfg.temp.maxStep - cfg.temp.minStep);
     const mh = 20 + t01 * (h - 40);
     g.fillStyle(0xe0513f, 1); g.fillCircle(x, y + h + 10, 15); g.fillRoundedRect(x - 6, y + h - mh, 12, mh + 6, 6);
@@ -356,6 +351,6 @@ export class DipScene extends Phaser.Scene {
     }
     const hx = from.x + (to.x - from.x) * e + 14, hy = from.y + (to.y - from.y) * e + 10;
     const pts = [[0, 0], [0, 38], [9, 30], [16, 44], [23, 40], [16, 27], [28, 27]].map(([dx, dy]) => new Phaser.Math.Vector2(hx + dx, hy + dy));
-    g.fillStyle(0xffffff, 1); g.lineStyle(3, 0x263238, 1); g.fillPoints(pts, true); g.strokePoints(pts, true);
+    const h = this.gHand; h.fillStyle(0xffffff, 1); h.lineStyle(3, 0x263238, 1); h.fillPoints(pts, true); h.strokePoints(pts, true);
   }
 }
