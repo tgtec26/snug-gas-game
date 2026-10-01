@@ -13,6 +13,7 @@ const SKIP_AFTER_MS = 1000; // 잠금이 풀린 뒤부터 건너뛸 수 있다
 /** 에어 로켓 피날레(6-8): 펌프 연타 → 로켓이 위쪽 하늘로 발사 → 빛 폭발·팡파르 → 별 카운트업 → 요약 팝업. 원리는 글로 설명하지 않는 연출. */
 export class FinaleScene extends Phaser.Scene {
   private g!: Phaser.GameObjects.Graphics;
+  private sp!: Record<'pumpbody' | 'pumphandle' | 'gauge' | 'pad' | 'rocket', Phaser.GameObjects.Image>;
   private stage: Stage = 'pause';
   private t0 = 0;
   private charge = 0;
@@ -41,7 +42,12 @@ export class FinaleScene extends Phaser.Scene {
   create() {
     hiDpi(this);
     attachRouter(this);
+    this.add.image(640, 400, 'finale_bg').setDisplaySize(1280, 800).setDepth(0);
     this.g = this.add.graphics().setDepth(5);
+    this.sp = {
+      pumpbody: this.add.image(0, 0, 'sp_pumpbody').setDepth(4), pumphandle: this.add.image(0, 0, 'sp_pumphandle').setDepth(4),
+      gauge: this.add.image(0, 0, 'sp_gauge').setDepth(4), pad: this.add.image(0, 0, 'sp_pad').setDepth(4), rocket: this.add.image(0, 0, 'sp_rocket').setDepth(4),
+    };
     this.stage = 'pause'; this.t0 = performance.now(); this.charge = 0; this.handle = 0; this.rocketT = 0; this.trail = [];
     this.shown = { stars: 0 }; this.doneAt = 0; this.advanced = false; this.lastKeyAt = 0;
 
@@ -159,13 +165,10 @@ export class FinaleScene extends Phaser.Scene {
   // ── 그리기 ──────────────────────────────────────────────────
   private draw(now: number) {
     const g = this.g; g.clear();
-    // 하늘과 풀밭
-    for (let i = 0; i < 16; i++) { g.fillStyle(Phaser.Display.Color.GetColor(110 + i * 7, 190 + i * 3, 240), 1); g.fillRect(0, i * 50, 1280, 51); }
-    g.fillStyle(0x6bbf59, 1); g.fillRect(0, 700, 1280, 100); g.fillStyle(0x58a84a, 1); g.fillRect(0, 700, 1280, 12);
-    for (let i = 0; i < 5; i++) { const cx = (i * 330 + now / 60) % 1500 - 100; g.fillStyle(0xffffff, 0.9); g.fillEllipse(cx, 160 + (i % 3) * 70, 190, 56); g.fillEllipse(cx + 50, 140 + (i % 3) * 70, 120, 50); }
     this.drawTube(g);
     this.drawPump(g);
     this.drawPad(g);
+    this.sp.rocket.setVisible(false);
     if (this.stage === 'pause' || this.stage === 'pump') this.drawRocket(g, 600, false);
     if (this.stage === 'launch' || this.stage === 'count' || this.stage === 'done') {
       for (const p of this.trail) { const k = (now - p.t0) / 500; g.fillStyle(0xffffff, 0.6 * (1 - k)); g.fillCircle(p.x, p.y + k * 40, 14 * (1 - k) + 4); }
@@ -183,14 +186,11 @@ export class FinaleScene extends Phaser.Scene {
   private drawPump(g: Phaser.GameObjects.Graphics) {
     const { x, y } = this.PUMP; const dip = this.handle * 60;
     g.fillStyle(0x000000, 0.25); g.fillEllipse(x, y + 62, 220, 28);
-    g.fillStyle(0x455a64, 1); g.fillRoundedRect(x - 90, y + 30, 180, 30, 10);
-    g.fillStyle(0xcfd8dc, 1); g.fillRoundedRect(x - 36, y - 120, 72, 160, 14); g.lineStyle(4, 0x78909c, 1); g.strokeRoundedRect(x - 36, y - 120, 72, 160, 14);
-    g.fillStyle(0x90a4ae, 1); g.fillRect(x - 8, y - 200 + dip, 16, 110);
-    g.fillStyle(0xe0513f, 1); g.fillRoundedRect(x - 80, y - 232 + dip, 160, 38, 16); g.lineStyle(4, 0x7f2a1f, 1); g.strokeRoundedRect(x - 80, y - 232 + dip, 160, 38, 16);
-    g.fillStyle(0xffffff, 0.35); g.fillRoundedRect(x - 64, y - 224 + dip, 128, 10, 5);
+    this.sp.pumpbody.setPosition(x, y + 62 - 113).setDisplaySize(190, 226);
+    this.sp.pumphandle.setPosition(x, y - 238 + dip + 110).setDisplaySize(160, 220);
     // 압력 게이지: 누를수록 바늘이 오른다
     const gx = x, gy = y - 300, r = 54;
-    g.fillStyle(0x546e7a, 1); g.fillCircle(gx, gy, r); g.fillStyle(0xffffff, 1); g.fillCircle(gx, gy, r - 7);
+    this.sp.gauge.setPosition(gx, gy - r + (r * 2 * 1.228) / 2).setDisplaySize(r * 2, r * 2 * 1.228);
     const a = ((-120 + this.charge * 240) * Math.PI) / 180;
     g.lineStyle(6, 0xc0506a, 1); g.lineBetween(gx, gy, gx + Math.sin(a) * (r - 14), gy - Math.cos(a) * (r - 14));
     g.fillStyle(0x546e7a, 1); g.fillCircle(gx, gy, 7);
@@ -199,19 +199,13 @@ export class FinaleScene extends Phaser.Scene {
   private drawPad(g: Phaser.GameObjects.Graphics) {
     const { x, y } = this.PAD;
     g.fillStyle(0x000000, 0.25); g.fillEllipse(x, y + 70, 200, 26);
-    g.fillStyle(0x455a64, 1); g.fillRoundedRect(x - 80, y + 30, 160, 34, 10);
-    g.fillStyle(0x78909c, 1); g.fillRect(x - 14, y + 4, 28, 30);
+    this.sp.pad.setPosition(x, y + 66 - 55).setDisplaySize(190, 110);
   }
 
   private drawRocket(g: Phaser.GameObjects.Graphics, y: number, flame: boolean) {
     const x = this.PAD.x;
     if (flame) { g.fillStyle(0xffd54f, 0.9); g.fillTriangle(x - 16, y + 66, x + 16, y + 66, x, y + 110 + Math.random() * 20); }
-    g.fillStyle(0x2e86de, 1); g.fillRoundedRect(x - 26, y - 40, 52, 110, 22);                     // 몸통(페트병)
-    g.fillStyle(0xffffff, 0.4); g.fillRoundedRect(x - 16, y - 30, 12, 80, 6);
-    g.fillStyle(0xe0513f, 1); g.fillTriangle(x - 26, y - 34, x + 26, y - 34, x, y - 96);          // 머리
-    g.fillStyle(0xf2b84a, 1); g.fillTriangle(x - 26, y + 40, x - 56, y + 76, x - 26, y + 70); g.fillTriangle(x + 26, y + 40, x + 56, y + 76, x + 26, y + 70);   // 날개
-    g.lineStyle(4, 0x1b4f8f, 1); g.strokeRoundedRect(x - 26, y - 40, 52, 110, 22);
-    g.fillStyle(0xcfefff, 1); g.fillCircle(x, y - 6, 12); g.lineStyle(3, 0x1b4f8f, 1); g.strokeCircle(x, y - 6, 12);
+    this.sp.rocket.setVisible(true).setPosition(x, y - 10).setDisplaySize(116, 190);
   }
 
   /** 글 없는 안내: 손잡이를 위아래로 누르는 손 모양 */

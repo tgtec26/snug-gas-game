@@ -29,6 +29,8 @@ export class ShakeScene extends Phaser.Scene {
   private flashes: { x: number; y: number; t0: number }[] = [];
   private doneAt = 0;
   private card: Phaser.GameObjects.Container | null = null;
+  private balls: Phaser.GameObjects.Image[] = [];
+  private sp!: { bottle: Phaser.GameObjects.Image; palm: Phaser.GameObjects.Image };
 
   constructor() { super({ key: 'Shake' }); }
 
@@ -43,6 +45,8 @@ export class ShakeScene extends Phaser.Scene {
     this.target = this.L.bottle.x; this.grab = null; this.lastKey = null; this.flashes = []; this.doneAt = 0; this.card = null; this.shownGauge = 0;
     this.lastTick = performance.now(); this.lastAct = performance.now(); this.lastSound = 0;
     this.g = this.add.graphics().setDepth(10);
+    this.balls = Array.from({ length: this.cfg.balls }, () => this.add.image(0, 0, 'sp_ball').setDepth(11));
+    this.sp = { bottle: this.add.image(0, 0, 'sp_bottle').setDepth(12), palm: this.add.image(0, 0, 'sp_palm').setDepth(11) };
 
     this.input.on('pointerdown', this.onDown, this);
     this.input.on('pointermove', this.onMove, this);
@@ -135,22 +139,10 @@ export class ShakeScene extends Phaser.Scene {
     const g = this.g; const b = this.L.bottle; const x = this.st.bottleX; g.clear();
     // 병 그림자
     g.fillStyle(0x000000, 0.22); g.fillEllipse(x, b.y + 16, b.w + 50, 30);
-    // 병 몸통(투명한 페트병): 몸통 + 어깨 + 목 + 뚜껑
+    // 병은 그림(투명한 페트병이 구슬 위로 겹친다), 구슬은 그림 20개
     const top = b.y - b.h;
-    g.fillStyle(0xdff3f7, 0.35); g.fillRoundedRect(x - b.w / 2, top, b.w, b.h, 22);
-    g.fillTriangle(x - b.w / 2, top + 4, x + b.w / 2, top + 4, x, top - 60);
-    g.fillStyle(0xdff3f7, 0.45); g.fillRect(x - 28, top - 90, 56, 50);
-    g.fillStyle(0x2e86de, 1); g.fillRoundedRect(x - 34, top - 112, 68, 28, 8);
-    // 구슬
-    for (const p of this.st.balls) {
-      g.fillStyle(0x6f7f8a, 1); g.fillCircle(p.x, p.y, BALL_R);
-      g.fillStyle(0xcfd8dc, 1); g.fillCircle(p.x - 3, p.y - 3, BALL_R * 0.45);
-      g.lineStyle(2, 0x37474f, 1); g.strokeCircle(p.x, p.y, BALL_R);
-    }
-    // 병 앞 유리 테두리(구슬이 병 안에 있어 보이게 구슬 위에 그린다)
-    g.lineStyle(5, 0x8fb7c2, 0.9); g.strokeRoundedRect(x - b.w / 2, top, b.w, b.h, 22);
-    g.lineBetween(x - b.w / 2, top + 4, x, top - 60); g.lineBetween(x + b.w / 2, top + 4, x, top - 60);
-    g.strokeRect(x - 28, top - 90, 56, 50);
+    this.sp.bottle.setPosition(x, top - 112 + (b.h + 112) / 2).setDisplaySize((b.h + 112) * (151 / 355), b.h + 112);
+    this.balls.forEach((im, i) => { const p = this.st.balls[i]; im.setVisible(!!p); if (p) im.setPosition(p.x, p.y).setDisplaySize(BALL_R * 2.3, BALL_R * 2.3); });
     // 충돌 섬광
     for (const f of this.flashes) {
       const k = (now - f.t0) / 220;
@@ -172,13 +164,10 @@ export class ShakeScene extends Phaser.Scene {
     g.fillStyle(col, 1); g.fillRoundedRect(x - w / 2 + 8, y + h - 8 - fh, w - 16, fh, 10);
     for (let i = 1; i < 5; i++) { g.lineStyle(3, 0x546e7a, 0.5); g.lineBetween(x - w / 2 + 8, y + (h * i) / 5, x - w / 2 + 22, y + (h * i) / 5); }
     // 손바닥: 게이지가 오를수록 붉어지고 떨린다
-    const sh = k > 0.6 ? Math.sin(now / 40) * (k - 0.6) * 8 : 0; const px = hand.x + sh;
-    g.fillStyle(0x000000, 0.2); g.fillEllipse(px, hand.y + 74, 130, 20);
-    const skin = k < 0.5 ? 0xf2cfae : k < 0.8 ? 0xf2a98c : 0xea7a66;
-    g.fillStyle(skin, 1); g.fillRoundedRect(px - 42, hand.y - 6, 84, 78, 26);
-    for (let i = 0; i < 4; i++) g.fillRoundedRect(px - 42 + i * 22, hand.y - 54 + (i === 1 || i === 2 ? -10 : 0), 18, 62, 9);
-    g.fillRoundedRect(px - 70, hand.y + 10, 34, 18, 9);
-    g.lineStyle(3, 0x8a5a3a, 1); g.strokeRoundedRect(px - 42, hand.y - 6, 84, 78, 26);
+    const sh = k > 0.6 ? Math.sin(now / 40) * (k - 0.6) * 8 : 0;
+    g.fillStyle(0x000000, 0.2); g.fillEllipse(hand.x + sh, hand.y + 74, 130, 20);
+    const tint = k < 0.5 ? 0xffffff : k < 0.8 ? 0xffc9b8 : 0xff9a88;
+    this.sp.palm.setPosition(hand.x + sh, hand.y + 18).setDisplaySize(120, 120 * (335 / 265)).setTint(tint);
   }
 
   /** 글 없는 안내: 병 위에서 좌우로 움직이는 손 모양과 화살표 */

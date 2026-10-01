@@ -56,6 +56,8 @@ export class ClinicScene extends Phaser.Scene {
   private lastPistonVol = 0;
   private lastPistonSound = 0;
   private lens!: LensView;
+  private sp!: Record<'barrel' | 'beaker' | 'grip' | 'gauge' | 'thermo' | 'knob', Phaser.GameObjects.Image>;
+  private GRIP_ASPECT = 3.24;
   private stepStartAt = 0;
 
   constructor() { super({ key: 'Clinic' }); }
@@ -76,6 +78,9 @@ export class ClinicScene extends Phaser.Scene {
     this.finishing = false; this.stepStartAt = performance.now(); this.popAt = {}; this.drag = null; this.shake = { piston: 0, dial: 0 };
 
     this.g = this.add.graphics().setDepth(10);
+    const im = (k: string, d: number) => this.add.image(0, 0, `sp_${k}`).setDepth(d);
+    this.sp = { barrel: im('barrel', 11), beaker: im('beaker', 8), grip: im('grip', 13), gauge: im('gauge', 9), thermo: im('thermo', 9), knob: im('knob', 9) };
+    this.GRIP_ASPECT = 366 / 113;
     const key = this.textures.exists(`patient_${patient.id}`) ? `patient_${patient.id}` : `patient_${patient.id}_ph`;
     const p = this.L.patient;
     this.ghostImg = this.add.image(p.x, p.y, key).setDepth(9).setTint(0x1b2a33).setTintMode(Phaser.TintModes.FILL).setAlpha(0.28);
@@ -275,16 +280,13 @@ export class ClinicScene extends Phaser.Scene {
 
     // 통(비커): 뒷벽 → 물 → 앞 유리
     const ry = 22;
-    g.fillStyle(0xdff3f7, 0.35); g.fillRect(bk.x - bk.w / 2, bk.top, bk.w, bk.bottom - bk.top);
     g.fillStyle(waterColor, 0.72); g.fillRect(bk.x - bk.w / 2 + 4, bk.top + 46, bk.w - 8, bk.bottom - bk.top - 46);
     g.fillEllipse(bk.x, bk.bottom, bk.w - 8, ry * 1.6);
     g.fillStyle(waterColorAt(waterT, true), 0.85); g.fillEllipse(bk.x, bk.top + 46, bk.w - 8, ry * 1.6);
 
     // 주사기 통: 뒤쪽 타원, 몸통, 기체
     const headY = this.headY(vol);
-    g.fillStyle(0xeaf6fb, 0.55); g.fillRect(b.x - b.w / 2, b.top, b.w, b.bottom - b.top); g.fillEllipse(b.x, b.bottom, b.w, 18);
     g.fillStyle(0xbfe6f7, 0.75); g.fillRect(b.x - b.w / 2 + 4, headY, b.w - 8, b.bottom - headY); g.fillEllipse(b.x, b.bottom, b.w - 8, 14);
-    g.lineStyle(3, 0x607d8b, 1); g.strokeRect(b.x - b.w / 2, b.top, b.w, b.bottom - b.top); g.strokeEllipse(b.x, b.top, b.w, 18);
     // 눈금 (숫자는 쓰지 않는다)
     g.lineStyle(2, 0x455a64, 0.9);
     for (let v = cfg.syringe.min; v <= cfg.syringe.max; v++) {
@@ -292,7 +294,6 @@ export class ClinicScene extends Phaser.Scene {
       g.lineBetween(b.x + b.w / 2, y, b.x + b.w / 2 + (long ? 16 : 9), y);
     }
     // 노즐과 관(압력 센서로)
-    g.fillStyle(0x90a4ae, 1); g.fillRect(b.x - 7, b.bottom, 14, 18);
     g.lineStyle(7, 0x78909c, 1);
     const curve = new Phaser.Curves.CubicBezier(new Phaser.Math.Vector2(b.x, b.bottom + 18), new Phaser.Math.Vector2(b.x, b.bottom + 70), new Phaser.Math.Vector2(L.gauge.x - 40, L.gauge.y + L.gauge.size * 0.55 + 40), new Phaser.Math.Vector2(L.gauge.x, L.gauge.y + L.gauge.size * 0.5));
     curve.draw(g, 32);
@@ -314,16 +315,12 @@ export class ClinicScene extends Phaser.Scene {
     g.fillStyle(0x000000, 0.25); g.fillEllipse(b.x + shakeX + 10 + lift * 18, hcy + 34 + lift * 30, L.piston.handleW * (1 - lift * 0.12), 16);
     const hw = L.piston.handleW * (1 + lift * 0.08), hh = L.piston.handleH * (1 + lift * 0.08);
     const pLocked = held === 'pressure';   // 온도를 쓰는 중이면 압력이 일정하다: 피스톤이 잠긴다
-    g.fillStyle(pLocked ? 0x8a9aa3 : 0xe0513f, 1); g.fillRoundedRect(b.x - hw / 2 + shakeX, hcy - hh / 2, hw, hh, 12);
-    g.fillStyle(0xffffff, 0.35); g.fillRoundedRect(b.x - hw / 2 + 8 + shakeX, hcy - hh / 2 + 5, hw - 16, 8, 4);
-    g.lineStyle(3, 0x7f2a1f, pLocked ? 0.3 : 1); g.strokeRoundedRect(b.x - hw / 2 + shakeX, hcy - hh / 2, hw, hh, 12);
+    const gw = hw * 1.06;
+    this.sp.grip.setPosition(b.x + shakeX, hcy).setDisplaySize(gw, gw / this.GRIP_ASPECT * (hh / L.piston.handleH)).setTint(pLocked ? 0x9aa7ad : 0xffffff);
 
-    // 비커 앞 유리 테두리(뒤 → 앞 겹침)
-    g.lineStyle(4, 0x8fb7c2, 0.9); g.strokeEllipse(bk.x, bk.top, bk.w, ry * 2);
-    g.lineBetween(bk.x - bk.w / 2, bk.top, bk.x - bk.w / 2, bk.bottom); g.lineBetween(bk.x + bk.w / 2, bk.top, bk.x + bk.w / 2, bk.bottom);
-    g.beginPath();
-    for (let i = 0; i <= 24; i++) { const a = (i / 24) * Math.PI; const px = bk.x + Math.cos(a) * (bk.w / 2), py = bk.bottom + Math.sin(a) * ry; if (i === 0) g.moveTo(px, py); else g.lineTo(px, py); }
-    g.strokePath();
+    // 비커·주사기 통은 그림(앞 유리가 물과 주사기 위로 겹친다)
+    this.sp.beaker.setPosition(bk.x, (bk.top - ry + bk.bottom + ry) / 2).setDisplaySize(bk.w + 16, bk.bottom - bk.top + 2 * ry);
+    this.sp.barrel.setPosition(b.x, (b.top - 14 + b.bottom + 22) / 2).setDisplaySize(b.w * 1.47, b.bottom - b.top + 36);
 
     this.drawGauge(g);
     this.drawThermo(g);
@@ -376,8 +373,7 @@ export class ClinicScene extends Phaser.Scene {
 
   private drawGauge(g: Phaser.GameObjects.Graphics) {
     const { x, y, size } = this.L.gauge; const r = size / 2;
-    g.fillStyle(0x546e7a, 1); g.fillCircle(x, y, r); g.fillStyle(0xffffff, 1); g.fillCircle(x, y, r - 10);
-    g.lineStyle(3, 0xb0bec5, 1); g.strokeCircle(x, y, r - 10);
+    this.sp.gauge.setPosition(x, y - r + (size * 1.228) / 2).setDisplaySize(size, size * 1.228);
     g.lineStyle(4, 0x546e7a, 1);
     for (let i = 0; i <= 10; i++) {
       const a = ((-ANGLE + (i / 10) * 2 * ANGLE) * Math.PI) / 180;
@@ -398,8 +394,7 @@ export class ClinicScene extends Phaser.Scene {
 
   private drawThermo(g: Phaser.GameObjects.Graphics) {
     const { x, y, h } = this.L.thermo; const cfg = this.cfg;
-    g.fillStyle(0xeceff1, 1); g.fillRoundedRect(x - 14, y, 28, h, 14); g.fillCircle(x, y + h + 10, 24);
-    g.lineStyle(4, 0x546e7a, 1); g.strokeRoundedRect(x - 14, y, 28, h, 14); g.strokeCircle(x, y + h + 10, 24);
+    this.sp.thermo.setPosition(x, y + (h + 52) / 2 - 8).setDisplaySize(60, h + 60);
     const t01 = (this.st.device.tempStep - cfg.temp.minStep) / (cfg.temp.maxStep - cfg.temp.minStep);
     const mh = 20 + t01 * (h - 40);
     g.fillStyle(0xe0513f, 1); g.fillCircle(x, y + h + 10, 15);
@@ -420,16 +415,13 @@ export class ClinicScene extends Phaser.Scene {
     const sx = now < this.shake.dial ? Math.sin(now / 25) * 6 : 0;
     const lift = this.drag?.kind === 'dial' ? 1 : 0;
     const X = x + sx;
-    g.fillStyle(0x455a64, 1); g.fillCircle(X, y + 8, r + 14);
-    g.fillStyle(0x263238, 1); g.fillCircle(X, y, r + 10);
+    this.sp.knob.setPosition(X, y - lift * 4).setDisplaySize((r + 14) * 2, (r + 14) * 2).setTint(locked ? 0x9aa7ad : 0xffffff);
     // 눈금 호: 파랑(낮춤)에서 빨강(높임)까지
     for (let i = 0; i <= 16; i++) {
       const t = i / 16; const a = ((-ANGLE + t * 2 * ANGLE) * Math.PI) / 180;
       g.fillStyle(lerpColor(0x57b7e8, 0xe8684a, t), locked ? 0.35 : 1);
       g.fillCircle(X + Math.sin(a) * (r + 2), y - Math.cos(a) * (r + 2), 4.5);
     }
-    g.fillStyle(locked ? 0x90a4ae : 0xeceff1, 1); g.fillCircle(X, y - lift * 4, r - 14);
-    g.fillStyle(0xffffff, 0.35); g.fillCircle(X - 14, y - 16 - lift * 4, r - 40);
     const a = (this.tempToAngle(this.st.device.tempStep) * Math.PI) / 180;
     g.lineStyle(9, 0x37474f, 1); g.lineBetween(X, y - lift * 4, X + Math.sin(a) * (r - 22), y - Math.cos(a) * (r - 22) - lift * 4);
     g.fillStyle(0x37474f, 1); g.fillCircle(X, y - lift * 4, 9);

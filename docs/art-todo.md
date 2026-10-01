@@ -12,7 +12,26 @@
 
 ## 교체 완료 (2026-10-01, codex gpt-5.5)
 
-배경 2장(`bg/clinic`, `bg/exam`), 진료소장 초상(`npc/doctor`), 환자 8종 + 응급실 문(`patients/*.webp`, 시트 한 장을 `scripts/slice_sheet.py`로 잘랐다). 원본은 `docs/assets-source/`. `public/assets/manifest.json`에 적혀 있고, 그림이 없으면 SVG 플레이스홀더로 돌아간다. 이 계정은 기본 모델(`gpt-6.1-sol`)을 지원하지 않아 `CODEX_MODEL=gpt-5.5 scripts/gen_image.sh ...`로 지정한다(`~/.codex/config.toml`은 건드리지 않았다). 사연 장면 8장(`story/*.webp`, 560×400 배경, 가운데 아래는 환자 자리로 비움)도 교체했다. **아직 플레이스홀더**: 견습 의사 초상(쓰는 곳 없음), 계기, 검사 장치 부품, 담그기 소품, 렌즈, 구슬 병, 피날레, 도장.
+모든 플레이스홀더를 codex 그림으로 교체했다. 원본은 `docs/assets-source/`, 게임용은 `public/assets/`, 목록은 `public/assets/manifest.json`(그림이 없으면 SVG·도형으로 돌아가는 곳은 환자·사연·계기·초상뿐이고, 검사 장치·담그기·구슬 흔들기·피날레 스프라이트는 그림이 있어야 한다).
+
+| 묶음 | 파일 | 쓰는 곳 |
+|---|---|---|
+| 배경 | `bg/clinic`, `bg/exam`, `bg/finale` | 대기실, 검사대, 피날레 |
+| 인물 | `npc/doctor` | 대사창 |
+| 환자 8 + 응급실 문 | `patients/*` | 대기실, 검사 장치 고스트, 진단서 |
+| 사연 장면 8 | `story/*` | 사연 장면 |
+| 실험 기구 9 | `equip/*` (beaker, gauge, thermo, knob, barrel, grip, ball, lens, ice) | 검사 장치, 담그기, 구슬 흔들기, 피날레 펌프 |
+| 소품 9 | `props/*` (glove, goggles, kid, bottle, palm, rocket, pumpbody, pumphandle, pad) | 담그기, 구슬 흔들기, 피날레 |
+
+변하는 부분(물 높이, 기체, 바늘, 수은, 다이얼 표시, 눈금, 입자, 섬광, 도장 글자)은 코드로 그린다. 그림은 틀(비커, 계기 바탕, 주사기 통, 손잡이 등)만 맡는다.
+
+계정 주의: 이 계정은 기본 모델 `gpt-6.1-sol`을 지원하지 않아 `~/.codex/config.toml`을 `gpt-5.5`로 바꿨다(사용자 승인).
+
+## 남은 것
+
+- 견습 공기 의사 초상(쓰는 곳 없음), 입자 렌즈 안 입자(공 모양은 코드, 추상 표현이라 그대로).
+- 보일·샤를 법칙 도장은 글자가 들어가서 CSS로 둔다.
+- 그림 크기·위치는 `/admin` 배치 탭과 각 씬의 `setDisplaySize` 값으로 조정한다.
 
 ## 이미 교체 장치가 있는 것 (파일만 넣고 `public/assets/manifest.json`에 경로를 적으면 자동 교체)
 

@@ -27,6 +27,7 @@ export interface LensOptions {
  */
 export class LensView {
   private g: Phaser.GameObjects.Graphics;
+  private iconImg: Phaser.GameObjects.Image;
   private ps: Particle[];
   private on = false;
   private drag: { x: number; y: number } | null = null;
@@ -38,6 +39,7 @@ export class LensView {
 
   constructor(private scene: Phaser.Scene, private o: LensOptions) {
     this.g = scene.add.graphics().setDepth(50);
+    this.iconImg = scene.add.image(o.icon.x, o.icon.y, 'sp_lens').setDepth(51);
     this.ps = createParticles(o.count);
     scene.input.on('pointerdown', this.onDown, this);
     scene.input.on('pointermove', this.onMove, this);
@@ -145,12 +147,9 @@ export class LensView {
     const i = this.o.icon; const now = performance.now();
     const at = this.drag ?? i; const lift = this.drag ? 1 : 0;
     g.fillStyle(0x000000, 0.22); g.fillEllipse(i.x, i.y + 52, 84, 14);
-    if (this.on && !this.drag) { g.lineStyle(4, 0x9fe3ff, 0.5 + 0.4 * Math.sin(now / 250)); g.strokeCircle(i.x, i.y, 40); return; }
-    const x = at.x, y = at.y - lift * 16, s = 1 + lift * 0.12;
-    g.lineStyle(10 * s, 0x6b4e2e, 1); g.lineBetween(x + 22 * s, y + 22 * s, x + 46 * s, y + 52 * s);
-    g.fillStyle(0xcfefff, 0.6); g.fillCircle(x, y, 34 * s);
-    g.lineStyle(7 * s, 0x546e7a, 1); g.strokeCircle(x, y, 34 * s);
-    g.fillStyle(0xffffff, 0.6); g.fillCircle(x - 11 * s, y - 11 * s, 8 * s);
+    if (this.on && !this.drag) { this.iconImg.setVisible(false); g.lineStyle(4, 0x9fe3ff, 0.5 + 0.4 * Math.sin(now / 250)); g.strokeCircle(i.x, i.y, 40); return; }
+    const s = 1 + lift * 0.12;
+    this.iconImg.setVisible(true).setPosition(at.x, at.y - lift * 16).setDisplaySize(104 * s, 104 * s * (348 / 361));
     if (this.drag && this.inZone(this.drag.x, this.drag.y)) { g.lineStyle(5, 0xffc933, 0.6 + 0.4 * Math.sin(now / 150)); g.strokeRect(this.o.zone.x, this.o.zone.y, this.o.zone.w, this.o.zone.h); }
   }
 }

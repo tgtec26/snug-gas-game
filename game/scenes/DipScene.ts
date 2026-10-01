@@ -49,6 +49,11 @@ export class DipScene extends Phaser.Scene {
   private finishing = false;
   private finishTimer: number | null = null;
   private lens!: LensView;
+  private sp!: {
+    barrel: Phaser.GameObjects.Image; beakerHot: Phaser.GameObjects.Image; beakerCold: Phaser.GameObjects.Image; grip: Phaser.GameObjects.Image;
+    kid: Phaser.GameObjects.Image; gogglesWorn: Phaser.GameObjects.Image; gloveL: Phaser.GameObjects.Image; gloveR: Phaser.GameObjects.Image;
+    thermo: Phaser.GameObjects.Image; gloveTray: Phaser.GameObjects.Image; gogglesTray: Phaser.GameObjects.Image; ice: Phaser.GameObjects.Image[];
+  };
 
   constructor() { super({ key: 'Dip' }); }
 
@@ -71,6 +76,12 @@ export class DipScene extends Phaser.Scene {
     this.res = resolveSyringe(this.L, this.cfg, this.worn, this.target.x, this.target.y);
 
     this.g = this.add.graphics().setDepth(10);
+    const im = (k: string, d: number) => this.add.image(0, 0, `sp_${k}`).setDepth(d);
+    this.sp = {
+      barrel: im('barrel', 11), beakerHot: im('beaker', 8), beakerCold: im('beaker', 8), grip: im('grip', 13),
+      kid: im('kid', 8), gogglesWorn: im('goggles', 11).setVisible(false), gloveL: im('glove', 11).setVisible(false), gloveR: im('glove', 11).setVisible(false).setFlipX(true),
+      thermo: im('thermo', 9), gloveTray: im('glove', 11), gogglesTray: im('goggles', 11), ice: [0, 1, 2].map(() => im('ice', 11)),
+    };
     const key = this.textures.exists(`patient_${patient.id}`) ? `patient_${patient.id}` : `patient_${patient.id}_ph`; const p = this.PL;
     this.ghostImg = this.add.image(p.x, p.y, key).setDepth(9).setTint(0x1b2a33).setTintMode(Phaser.TintModes.FILL).setAlpha(0.28);
     this.previewImg = this.add.image(p.x, p.y, key).setDepth(11);
@@ -226,7 +237,6 @@ export class DipScene extends Phaser.Scene {
     const sx = now < this.shakeUntil[k] ? Math.sin(now / 25) * 7 : 0; const X = b.x + sx;
     const hot = k === 'hot';
     g.fillStyle(0x000000, 0.22); g.fillEllipse(X, b.bottom + 14, b.w + 60, 32);
-    g.fillStyle(0xdff3f7, 0.35); g.fillRect(X - b.w / 2, b.top, b.w, b.bottom - b.top);
     g.fillStyle(hot ? 0xef6f4a : 0x3f9de0, 0.72); g.fillRect(X - b.w / 2 + 4, wt, b.w - 8, b.bottom - wt); g.fillEllipse(X, b.bottom, b.w - 8, ry * 1.6);
     g.fillStyle(hot ? 0xffc2a0 : 0x9fd7f6, 0.9); g.fillEllipse(X, wt, b.w - 8, ry * 1.6);
     if (hot) {   // 김
@@ -239,21 +249,16 @@ export class DipScene extends Phaser.Scene {
     } else {     // 얼음
       for (let i = 0; i < 3; i++) {
         const bob = Math.sin(now / 700 + i * 2) * 3; const ix = X - 54 + i * 54; const iy = wt + 4 + bob;
-        g.fillStyle(0xeaf9ff, 0.95); g.fillRoundedRect(ix - 22, iy - 18, 44, 38, 8); g.lineStyle(3, 0x8fb7c2, 1); g.strokeRoundedRect(ix - 22, iy - 18, 44, 38, 8);
+        this.sp.ice[i].setPosition(ix, iy).setDisplaySize(46, 47);
       }
     }
-    g.lineStyle(4, 0x8fb7c2, 0.9); g.strokeEllipse(X, b.top, b.w, ry * 2);
-    g.lineBetween(X - b.w / 2, b.top, X - b.w / 2, b.bottom); g.lineBetween(X + b.w / 2, b.top, X + b.w / 2, b.bottom);
-    g.beginPath();
-    for (let i = 0; i <= 24; i++) { const a = (i / 24) * Math.PI; const px = X + Math.cos(a) * (b.w / 2), py = b.bottom + Math.sin(a) * ry; if (i === 0) g.moveTo(px, py); else g.lineTo(px, py); }
-    g.strokePath();
+    this.sp[k === 'hot' ? 'beakerHot' : 'beakerCold'].setPosition(X, (b.top - ry + b.bottom + ry) / 2).setDisplaySize(b.w + 16, b.bottom - b.top + 2 * ry);
   }
 
   private drawThermo(g: Phaser.GameObjects.Graphics) {
     const { x, y, h } = this.L.thermo; const cfg = this.cfg;
     g.fillStyle(0x000000, 0.2); g.fillEllipse(x, y + h + 40, 70, 18);
-    g.fillStyle(0xeceff1, 1); g.fillRoundedRect(x - 14, y, 28, h, 14); g.fillCircle(x, y + h + 10, 24);
-    g.lineStyle(4, 0x546e7a, 1); g.strokeRoundedRect(x - 14, y, 28, h, 14); g.strokeCircle(x, y + h + 10, 24);
+    this.sp.thermo.setPosition(x, y + (h + 52) / 2 - 8).setDisplaySize(60, h + 60);
     const t01 = (this.st.device.tempStep - cfg.temp.minStep) / (cfg.temp.maxStep - cfg.temp.minStep);
     const mh = 20 + t01 * (h - 40);
     g.fillStyle(0xe0513f, 1); g.fillCircle(x, y + h + 10, 15); g.fillRoundedRect(x - 6, y + h - mh, 12, mh + 6, 6);
@@ -269,35 +274,20 @@ export class DipScene extends Phaser.Scene {
     const { x, y, r } = this.L.person;
     g.fillStyle(0x000000, 0.2); g.fillEllipse(x, y + r + 70, r * 2, 26);
     if (this.drag?.kind === 'gear') { g.lineStyle(6, 0xffc933, 0.5 + 0.4 * Math.sin(now / 150)); g.strokeCircle(x, y, r + 30); }
-    g.fillStyle(0x5f7f8c, 1); g.fillRoundedRect(x - 56, y - 10, 112, 130, 28);        // 몸통
-    g.fillStyle(0xf2cfae, 1); g.fillCircle(x, y - 46, 40);                               // 머리
-    g.fillStyle(0x3a2d26, 1); g.fillEllipse(x, y - 70, 76, 34);                          // 머리카락
-    if (this.worn.includes('goggles')) {
-      g.fillStyle(0x9fe3ff, 0.9); g.fillCircle(x - 17, y - 46, 15); g.fillCircle(x + 17, y - 46, 15);
-      g.lineStyle(4, 0x263238, 1); g.strokeCircle(x - 17, y - 46, 15); g.strokeCircle(x + 17, y - 46, 15); g.lineBetween(x - 2, y - 46, x + 2, y - 46);
-      g.lineBetween(x - 32, y - 46, x - 42, y - 46); g.lineBetween(x + 32, y - 46, x + 42, y - 46);
-    }
-    if (this.worn.includes('gloves')) {
-      g.fillStyle(0xf4a233, 1); g.fillRoundedRect(x - 82, y + 70, 30, 40, 10); g.fillRoundedRect(x + 52, y + 70, 30, 40, 10);
-      g.lineStyle(3, 0x8a5a14, 1); g.strokeRoundedRect(x - 82, y + 70, 30, 40, 10); g.strokeRoundedRect(x + 52, y + 70, 30, 40, 10);
-    }
+    this.sp.kid.setPosition(x, y + 5).setDisplaySize(151, 250);
+    this.sp.gogglesWorn.setVisible(this.worn.includes('goggles')).setPosition(x, y - 72).setDisplaySize(78, 78 * (196 / 379));
+    const gl = this.worn.includes('gloves');
+    this.sp.gloveL.setVisible(gl).setPosition(x - 64, y + 96).setDisplaySize(34, 53); this.sp.gloveR.setVisible(gl).setPosition(x + 64, y + 96).setDisplaySize(34, 53);
   }
 
   private drawGearIcon(g: Phaser.GameObjects.Graphics, gear: Gear, x: number, y: number, s: number) {
     g.fillStyle(0x000000, 0.22); g.fillEllipse(x, y + 34 * s, 80 * s, 14 * s);
-    if (gear === 'gloves') {
-      g.fillStyle(0xf4a233, 1); g.fillRoundedRect(x - 28 * s, y - 14 * s, 56 * s, 46 * s, 12 * s);
-      for (let i = 0; i < 4; i++) g.fillRoundedRect(x - 28 * s + i * 14 * s, y - 40 * s + (i === 1 || i === 2 ? -6 * s : 0), 12 * s, 34 * s, 6 * s);
-      g.fillRoundedRect(x - 44 * s, y - 2 * s, 20 * s, 14 * s, 6 * s);
-      g.lineStyle(3, 0x8a5a14, 1); g.strokeRoundedRect(x - 28 * s, y - 14 * s, 56 * s, 46 * s, 12 * s);
-    } else {
-      g.fillStyle(0x9fe3ff, 0.9); g.fillCircle(x - 20 * s, y, 20 * s); g.fillCircle(x + 20 * s, y, 20 * s);
-      g.lineStyle(5, 0x263238, 1); g.strokeCircle(x - 20 * s, y, 20 * s); g.strokeCircle(x + 20 * s, y, 20 * s);
-      g.lineBetween(x - 40 * s, y, x - 56 * s, y + 4 * s); g.lineBetween(x + 40 * s, y, x + 56 * s, y + 4 * s);
-    }
+    if (gear === 'gloves') this.sp.gloveTray.setVisible(true).setPosition(x, y).setDisplaySize(52 * s, 81 * s);
+    else this.sp.gogglesTray.setVisible(true).setPosition(x, y).setDisplaySize(104 * s, 104 * s * (196 / 379));
   }
 
   private drawGearTray(g: Phaser.GameObjects.Graphics) {
+    this.sp.gloveTray.setVisible(false); this.sp.gogglesTray.setVisible(false);
     for (const gear of GEARS) {
       if (this.worn.includes(gear)) continue;
       const p = this.gearPos(gear);
@@ -314,17 +304,15 @@ export class DipScene extends Phaser.Scene {
     const height = Math.max(0, (this.L.cold.bottom + 14) - tip);
     g.fillStyle(0x000000, Math.max(0.08, 0.26 - height / 2500)); g.fillEllipse(r.x + lift * 10, this.L.cold.bottom + 30, s.w * (1.4 + height / 500), 16);
     // 통
-    g.fillStyle(0xeaf6fb, 0.6); g.fillRect(r.x - s.w / 2, top, s.w, BARREL_LEN);
     g.fillStyle(0xbfe6f7, 0.8); g.fillRect(r.x - s.w / 2 + 4, gasTop, s.w - 8, bodyBottom - gasTop);
-    g.lineStyle(3, 0x607d8b, 1); g.strokeRect(r.x - s.w / 2, top, s.w, BARREL_LEN);
     g.lineStyle(2, 0x455a64, 0.9);
     for (let i = 0; i <= 16; i++) g.lineBetween(r.x + s.w / 2, bodyBottom - i * (BARREL_LEN / 16), r.x + s.w / 2 + (i % 2 === 0 ? 14 : 8), bodyBottom - i * (BARREL_LEN / 16));
     // 노즐
-    g.fillStyle(0x90a4ae, 1); g.fillRect(r.x - 7, bodyBottom, 14, s.nozzle);
+    this.sp.barrel.setPosition(r.x, (top - 14 + tip) / 2).setDisplaySize(s.w * 1.47, tip - top + 14);
     // 피스톤: 머리 + 막대 + 손잡이
     g.fillStyle(0x37474f, 1); g.fillRect(r.x - s.w / 2 + 3, gasTop - 12, s.w - 6, 12);
     g.fillStyle(0x546e7a, 1); g.fillRect(r.x - 5, gasTop - 60, 10, 50);
-    g.fillStyle(0xe0513f, 1); g.fillRoundedRect(r.x - 40, gasTop - 84, 80, 26, 10); g.lineStyle(3, 0x7f2a1f, 1); g.strokeRoundedRect(r.x - 40, gasTop - 84, 80, 26, 10);
+    this.sp.grip.setPosition(r.x, gasTop - 71).setDisplaySize(92, 92 / (366 / 113));
     if (lift) { g.lineStyle(4, 0xffc933, 0.6 + 0.3 * Math.sin(now / 150)); g.strokeRect(r.x - s.w / 2 - 4, top - 4, s.w + 8, BARREL_LEN + s.nozzle + 8); }
   }
 
