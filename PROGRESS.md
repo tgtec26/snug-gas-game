@@ -90,3 +90,9 @@
 - 새 효과음 `tick/piston/splash/collide/stamp/fanfare/launch`를 로컬 오디오 스튜디오로 생성해 `public/assets/audio/gas_*.mp3`로 두고 `audio-config.json`에 등록(없는 슬롯이 있으면 로딩 오류 화면이 뜨는 것도 확인). 눈금 딸깍은 `tick`, 피스톤 이동은 `piston`(160ms 간격), 물에 담그기·빼기는 `splash`, 입자·구슬 충돌은 `collide`(간격 제한), 도장은 `stamp`, 구슬 흔들기 완료·피날레 폭발은 `fanfare`, 로켓은 `launch`.
 - 점검 기록은 `docs/principles-check.md`. 인트로 Enter 15회 연타 확인, 나머지는 스토어 테스트와 이전 태스크의 브라우저 확인에 근거.
 - **소리를 귀로 확인하지 못했다.** 시드 하나로 한 번 만든 결과이고 이 맥의 ffmpeg가 깨져 있어 soundfile로 mp3를 만들었다. 어색하면 다시 만들 것.
+
+## 2026-10-01 Task 16: admin 편집기
+- `/admin` 8탭: 환자(환자·인물 카드·숙제 카드), 입자 규칙, 실험 설정, 미니게임, 대사, **배치**, 에셋(manifest), **음량**. 구조가 단순한 파일은 JSON 편집기(형식 오류면 저장 비활성, 검증 오류는 서버가 알려 줌).
+- 배치 탭: 검사 장치·담그기·구슬 흔들기 3개 장면의 위치를 점으로 끌어 옮기고(통은 top·bottom을 함께), 선택한 요소의 모든 숫자(크기·반지름·범위)를 입력 칸으로 고친다. 저장하면 `layout.json`에 들어가고 씬이 그대로 읽는다. 음량 탭: 음량 슬라이더, 슬롯별 음원 이름, 듣기 단추.
+- API(`app/api/admin/[file]`): 허용 파일만, 저장 전에 `game/adminData.ts`의 `validateFile`로 검사(다른 파일과 엮인 검사 포함: 환자 ↔ 실험 설정 ↔ 대사, 금지어, 대사 2문장, 숙제 카드 답 금지, 배치 범위, 음량 범위, manifest 알려진 그림만). production POST는 403. `tests/adminRoute.test.ts` 10개.
+- 확인: `pnpm test` 186개, typecheck, lint 통과. 브라우저에서 배치 탭 점 드래그 → 저장 → layout.json 변경 확인(확인 뒤 되돌림). **코드에 박힌 값이 아직 남아 있다**(예: 키보드 이동 간격, 로켓·펌프 위치, 시간 상수 등). Task 17의 grep 점검 대상.
