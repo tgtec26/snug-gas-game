@@ -55,11 +55,13 @@ describe('phase → 배경음', () => {
 describe('attachRouter (씬이 시작되는 사이에 phase가 바뀌어도 놓치지 않는다)', () => {
   beforeEach(() => { localStorage.clear(); useGame.getState().reset(); });
   const fake = (key: string) => {
-    const handlers: Array<() => void> = [];
+    const handlers: Array<[string, () => void]> = [];
+    const emit = (name: string) => handlers.filter(([n]) => n === name).forEach(([, h]) => h());
     return {
       start: vi.fn(),
-      scene: { scene: { key, start: vi.fn() }, events: { once: (_: string, fn: () => void) => handlers.push(fn) } },
-      shutdown: () => handlers.forEach(h => h()),
+      scene: { scene: { key, start: vi.fn() }, events: { once: (name: string, fn: () => void) => handlers.push([name, fn]) } },
+      shutdown: () => emit('shutdown'),
+      destroy: () => emit('destroy'),
     };
   };
   it('붙는 순간 이미 phase가 exam이면 바로 Clinic으로 넘긴다', () => {
@@ -88,6 +90,14 @@ describe('attachRouter (씬이 시작되는 사이에 phase가 바뀌어도 놓�
     const f = fake('Backdrop');
     attachRouter(f.scene as never);
     f.shutdown();
+    useGame.setState({ phase: 'exam' });
+    expect(f.scene.scene.start).not.toHaveBeenCalled();
+  });
+  it('게임이 통째로 파괴된 뒤(개발 중 화면 갱신)에도 옛 씬이 반응하지 않는다', () => {
+    useGame.setState({ phase: 'clinic' });
+    const f = fake('Backdrop');
+    attachRouter(f.scene as never);
+    f.destroy();   // game.destroy()는 shutdown 없이 destroy만 내보낸다
     useGame.setState({ phase: 'exam' });
     expect(f.scene.scene.start).not.toHaveBeenCalled();
   });

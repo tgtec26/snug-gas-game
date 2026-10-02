@@ -40,6 +40,7 @@ export function attachRouter(scene: Phaser.Scene) {
     else if (s.phase === 'emergency' && s.currentId !== prev.currentId && s.currentId && !go(s.phase)) { unsub(); scene.scene.restart(); }
   });
   scene.events.once('shutdown', unsub);
+  scene.events.once('destroy', unsub);   // game.destroy()(화면 갱신·재마운트)는 shutdown 없이 destroy만 내보낸다
   go(useGame.getState().phase);
   return unsub;
 }
