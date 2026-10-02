@@ -29,17 +29,17 @@
 
 ## 새 효과음 7종
 
-`~/agent/game-audio`(local-game-audio-studio, Stable Audio Open)로 만들었다. 이 맥의 ffmpeg가 깨져 있어(`libx265` 없음) `soundfile`로 mp3(mono, 44.1kHz)로 저장했다. **소리는 귀로 듣고 고르지 못했다** — 시드 한 개로 한 번 만든 결과라 어색하면 다시 만들어야 한다.
+2026-10-02에 AI 생성 음원(Stable Audio Open, CC-BY-NC 비상업)을 Freesound CC0 녹음으로 교체했다. 출처·라이선스는 local-game-audio-studio `library/CATALOG.md`. **귀로 듣고 고르지 못했다** — 어색한 것은 같은 카탈로그의 다른 후보로 바꾼다. 표의 '프롬프트'는 원래 의도한 소리 설명이다.
 
 | 슬롯 | 파일 | 프롬프트 | 쓰는 곳 |
 |---|---|---|---|
-| tick | gas_tick | short crisp mechanical click, small dial notch tick, dry | 눈금 읽기 |
-| piston | gas_piston | short pneumatic air whoosh hiss, piston pushing air in a syringe | 피스톤 이동 |
-| splash | gas_splash | water splash, a hand dipping into a bowl of water, bubbling gurgle | 주사기를 물에 담글 때·뺄 때 |
-| collide | gas_collide | tiny hard ball tapping glass wall, soft short tick | 구슬·입자 벽 충돌 |
-| stamp | gas_stamp | heavy rubber stamp thump on paper, short thud | 도장 |
-| fanfare | gas_fanfare | short triumphant brass fanfare, celebration, cheerful | 구슬 흔들기 완료·피날레 |
-| launch | gas_launch | air rocket launch, burst of air pressure release then rising whistle whoosh | 로켓 발사 |
+| tick | 421469_click_149 | short crisp mechanical click, small dial notch tick, dry | 눈금 읽기 |
+| piston | 521494_air_blast_piston_small | short pneumatic air whoosh hiss, piston pushing air in a syringe | 피스톤 이동 |
+| splash | 867459_water_splash_4 | water splash, a hand dipping into a bowl of water, bubbling gurgle | 주사기를 물에 담글 때·뺄 때 |
+| collide | 262958_glass_tap | tiny hard ball tapping glass wall, soft short tick | 구슬·입자 벽 충돌 |
+| stamp | 683031_thump | heavy rubber stamp thump on paper, short thud | 도장 |
+| fanfare | 770801_fanfare | short triumphant brass fanfare, celebration, cheerful | 구슬 흔들기 완료·피날레 |
+| launch | 521377_rocket_launch | air rocket launch, burst of air pressure release then rising whistle whoosh | 로켓 발사 |
 
 음량·음원은 `public/data/audio-config.json`(admin 음량 탭).
 

@@ -10,12 +10,12 @@
     "correct": "correct",
     "error": "error",
     "success": "success",
-    "tick": "gas_tick",
-    "piston": "gas_piston",
-    "splash": "gas_splash",
-    "collide": "gas_collide",
-    "stamp": "gas_stamp",
-    "fanfare": "gas_fanfare",
-    "launch": "gas_launch"
+    "tick": "421469_click_149",
+    "piston": "521494_air_blast_piston_small",
+    "splash": "867459_water_splash_4",
+    "collide": "262958_glass_tap",
+    "stamp": "683031_thump",
+    "fanfare": "770801_fanfare",
+    "launch": "521377_rocket_launch"
   }
 }

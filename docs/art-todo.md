@@ -64,4 +64,4 @@
 
 ## 소리
 
-새 효과음 7종은 `~/agent/game-audio`(local-game-audio-studio)로 만들어 `public/assets/audio/gas_*.mp3`에 두었다(`docs/principles-check.md` 참고). **귀로 듣고 고르지 못했다** — 어색한 것은 같은 스튜디오에서 다시 만들어 같은 이름으로 대체한다. 배경음 3개와 정답·오답·성공음은 다른 게임의 것을 재활용한다.
+새 효과음 7종은 Freesound CC0 녹음(`public/assets/audio/`의 `<id>_<이름>.mp3`)으로 교체했다(`docs/principles-check.md` 참고). **귀로 듣고 고르지 못했다** — 어색한 것은 `local-game-audio-studio`의 카탈로그에서 다른 후보로 바꾼다. 배경음 3개와 정답·오답·성공음은 다른 게임의 것을 재활용한다.
