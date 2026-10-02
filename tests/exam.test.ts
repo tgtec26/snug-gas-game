@@ -167,6 +167,10 @@ describe('끝난 뒤와 제한 시간', () => {
 describe('minigame-config.json', () => {
   it('오류가 없다', () => { expect(validateMinigame(mg)).toEqual([]); });
   it('0 이하 값은 잡는다', () => { expect(validateMinigame({ ...mg, examTimeLimitMs: 0 }).join()).toContain('examTimeLimitMs'); });
+  it('이름 최대 글자 수는 1 이상의 정수', () => {
+    expect(validateMinigame({ ...mg, hero: { ...mg.hero, nameMax: 0 } }).join()).toContain('hero.nameMax');
+    expect(validateMinigame({ ...mg, hero: undefined as never }).join()).toContain('hero');
+  });
 });
 
 describe('측정 진료: 고무공 눈금 읽기', () => {

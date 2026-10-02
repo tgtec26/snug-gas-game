@@ -9,11 +9,11 @@ const g = () => useGame.getState();
 
 beforeEach(() => { localStorage.clear(); g().reset(); g().loadPatients(ps); });
 
-function toClinic() { g().start(); g().next(); g().next(); }
+function toClinic() { g().start('학생', 'boy'); g().next(); g().next(); }
 
 describe('단계 전이', () => {
   it('title → intro → tutorial → clinic', () => {
-    expect(g().phase).toBe('title'); g().start(); expect(g().phase).toBe('intro');
+    expect(g().phase).toBe('title'); g().start('학생', 'boy'); expect(g().phase).toBe('intro');
     g().next(); expect(g().phase).toBe('tutorial'); g().next(); expect(g().phase).toBe('clinic');
   });
   it('환자 순서: 진료 4건 + 응급 4명, 응급은 진료 목록에 없다', () => {
@@ -67,11 +67,30 @@ describe('별 합계', () => {
   });
 });
 
+describe('캐릭터와 이름', () => {
+  it('이름이 비었거나 공백뿐이면 시작하지 않는다', () => {
+    g().start('', 'girl1'); g().start('   ', 'girl1'); expect(g().phase).toBe('title');
+  });
+  it('앞뒤 공백을 떼고 이름과 캐릭터를 저장한다', () => {
+    g().start('  학생 ', 'girl2'); expect(g().phase).toBe('intro');
+    expect(g().playerName).toBe('학생'); expect(g().heroId).toBe('girl2');
+    expect(JSON.parse(localStorage.getItem(RUN_KEY) as string).state).toMatchObject({ playerName: '학생', heroId: 'girl2' });
+  });
+  it('처음으로(reset) 뒤에도 이름과 캐릭터는 남는다', () => {
+    g().start('학생', 'girl1'); g().reset();
+    expect(g().phase).toBe('title'); expect(g().playerName).toBe('학생'); expect(g().heroId).toBe('girl1');
+  });
+});
+
 describe('새로고침 복원', () => {
-  const base = { phase: 'clinic' as const, examIds: ['a'], emergencyIds: ['e'], currentId: null, records: {}, emergencyResults: [], emergencyLog: [] };
+  const base = { phase: 'clinic' as const, heroId: 'boy' as const, playerName: '학생', examIds: ['a'], emergencyIds: ['e'], currentId: null, records: {}, emergencyResults: [], emergencyLog: [] };
   it('진행 중이던 진료는 사연 장면부터', () => { expect(normalizeRehydrated({ ...base, phase: 'exam', currentId: 'a' }).phase).toBe('story'); });
   it('응급실 중간 결과는 버린다', () => { expect(normalizeRehydrated({ ...base, phase: 'emergency', emergencyResults: [true] }).emergencyResults).toEqual([]); });
   it('진단서와 대기실은 그대로', () => { expect(normalizeRehydrated({ ...base, phase: 'diagnosis' }).phase).toBe('diagnosis'); });
+  it('이름 없이 진행 중이던 예전 저장본은 시작 화면으로', () => {
+    const n = normalizeRehydrated({ ...base, playerName: '', records: { a: { stars: 3, wrongGauge: 0 } } });
+    expect(n.phase).toBe('title'); expect(n.records).toEqual({});
+  });
   it('저장본이 localStorage에 들어간다', () => {
     toClinic(); expect(JSON.parse(localStorage.getItem(RUN_KEY) as string).state.phase).toBe('clinic');
   });
@@ -131,7 +150,7 @@ describe('응급실 라운드', () => {
   });
   it('새로고침하면 응급실은 처음부터 다시', () => {
     toEmergency(); g().startRound(); g().recordRound('ppball', true);
-    const n = normalizeRehydrated({ phase: 'emergency', examIds: g().examIds, emergencyIds: ids, currentId: 'airbed', records: {}, emergencyResults: [], emergencyLog: [{ id: 'ppball', ok: true }] });
+    const n = normalizeRehydrated({ phase: 'emergency', heroId: 'boy', playerName: '학생', examIds: g().examIds, emergencyIds: ids, currentId: 'airbed', records: {}, emergencyResults: [], emergencyLog: [{ id: 'ppball', ok: true }] });
     expect(n.emergencyLog).toEqual([]); expect(n.currentId).toBe('ppball');
   });
 });

@@ -16,7 +16,7 @@ const TABS: Tab[] = [
   ] },
   { id: 'particles', label: '입자 규칙', files: [{ file: 'particle-rules', label: '입자 규칙', help: '교과서에 있는 칸만 값을 쓰고, 없는 칸은 null(강조하지 않음). 입자 개수(count)는 항상 "same".' }] },
   { id: 'experiments', label: '실험 설정', files: [{ file: 'experiments', label: '실험 설정', help: '주사기 범위·눈금 읽기·허용 오차(tolerance)·유지 시간(holdMs, ms)·온도 단계·렌즈 관찰 시간·담그기(dip) 설정. 수치는 화면에 숫자로 보이지 않는 내부 눈금입니다.' }] },
-  { id: 'minigame', label: '미니게임', files: [{ file: 'minigame-config', label: '미니게임', help: '시간은 ms(1000 = 1초). examTimeLimitMs 진료 제한(별 ②), hintIdleMs 손 모양 안내가 뜨는 시간, emergencyRoundMs 응급실 라운드, particleCount 렌즈 입자 수, shake 구슬 흔들기(gain이 클수록 게이지가 빨리 참). 한 판 10분 내외가 되도록.' }] },
+  { id: 'minigame', label: '미니게임', files: [{ file: 'minigame-config', label: '미니게임', help: '시간은 ms(1000 = 1초). examTimeLimitMs 진료 제한(별 ②), hintIdleMs 손 모양 안내가 뜨는 시간, emergencyRoundMs 응급실 라운드, particleCount 렌즈 입자 수, shake 구슬 흔들기(gain이 클수록 게이지가 빨리 참), hero.nameMax 이름 최대 글자 수, hero.cardSize 시작 화면 캐릭터 그림 높이(px). 한 판 10분 내외가 되도록.' }] },
   { id: 'dialog', label: '대사', files: [{ file: 'dialog-config', label: '대사', help: '대사는 한 번에 1~2문장. hints는 실패 한 줄 안내, tutorial은 구슬 흔들기 카드. 교과서에 없는 말(분자 등)은 저장할 수 없습니다.' }] },
   { id: 'layout', label: '배치' },
   { id: 'assets', label: '에셋', files: [{ file: 'manifest', label: '그림 목록', help: 'public/assets/ 아래에 넣은 그림 파일을 여기에 적으면 플레이스홀더 대신 쓰입니다. 예: ["bg/exam.webp"]. 알려진 파일 이름만 저장됩니다(game/systems/render.ts의 ART 표).' }] },

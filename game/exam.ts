@@ -27,7 +27,8 @@ export type ExamEvent =
   | { type: 'all-done' };
 
 export interface MinigameConfig { examTimeLimitMs: number; hintIdleMs: number; successHoldMs: number; particleCount: number; emergencyRoundMs: number; lockMs: number; longLockMs: number; storyMs: number; emergencyStoryMs: number;
-  finale: { pauseMs: number; pumpMs: number; pressGain: number; autoNextMs: number }; shake: ShakeConfig }
+  finale: { pauseMs: number; pumpMs: number; pressGain: number; autoNextMs: number }; shake: ShakeConfig;
+  hero: { nameMax: number; cardSize: number } }
 
 export function validateMinigame(c: MinigameConfig): string[] {
   const errs: string[] = [];
@@ -38,6 +39,11 @@ export function validateMinigame(c: MinigameConfig): string[] {
   for (const k of ['lockMs', 'longLockMs', 'storyMs', 'emergencyStoryMs'] as const) if (!(c[k] > 0)) errs.push(`${k}는 0보다 커야 한다`);
   if (!c.finale) errs.push('finale 설정이 없다');
   else for (const k of ['pauseMs', 'pumpMs', 'pressGain', 'autoNextMs'] as const) if (!(c.finale[k] > 0)) errs.push(`finale.${k}는 0보다 커야 한다`);
+  if (!c.hero) errs.push('hero 설정이 없다');
+  else {
+    if (!Number.isInteger(c.hero.nameMax) || !(c.hero.nameMax >= 1)) errs.push('hero.nameMax는 1 이상의 정수여야 한다');
+    if (!(c.hero.cardSize > 0)) errs.push('hero.cardSize는 0보다 커야 한다');
+  }
   errs.push(...validateShake(c.shake));
   if (!Number.isInteger(c.particleCount) || !(c.particleCount > 0)) errs.push('particleCount는 0보다 큰 정수여야 한다');
   return errs;

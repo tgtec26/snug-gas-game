@@ -5,8 +5,14 @@ import { scoreStars } from './rules';
 
 export const RUN_KEY = 'air-clinic-run-v1';
 
+/** 시작 화면에서 고르는 진행 캐릭터 (남 1, 여 2). 그림은 hero/<id>.webp */
+export const HERO_IDS = ['boy', 'girl1', 'girl2'] as const;
+export type HeroId = (typeof HERO_IDS)[number];
+
 export interface RunData {
   phase: Phase;
+  heroId: HeroId;
+  playerName: string;                   // 학생이 직접 입력한 이름 (기본값 없음)
   examIds: string[];                    // 진료 순서 (응급 제외)
   emergencyIds: string[];
   currentId: string | null;
@@ -17,7 +23,7 @@ export interface RunData {
 
 export interface GameState extends RunData {
   loadPatients: (patients: Patient[]) => void;
-  start: () => void;
+  start: (name: string, heroId: HeroId) => void;
   next: () => void;
   enterExam: (id: string) => void;
   finishStory: () => void;
@@ -31,7 +37,7 @@ export interface GameState extends RunData {
 }
 
 const blank = (): RunData => ({
-  phase: 'title', examIds: [], emergencyIds: [], currentId: null, records: {}, emergencyResults: [], emergencyLog: [],
+  phase: 'title', heroId: 'boy', playerName: '', examIds: [], emergencyIds: [], currentId: null, records: {}, emergencyResults: [], emergencyLog: [],
 });
 
 export const nextExamId = (s: Pick<RunData, 'examIds' | 'records'>): string | null =>
@@ -48,8 +54,9 @@ export function emergencyQueue(ids: string[], log: { id: string; ok: boolean }[]
   return [...ids, ...ids.filter(id => !first.some(l => l.id === id && l.ok))];
 }
 
-/** 새로고침 복원: 진행 중이던 진료는 사연 장면부터 다시, 응급실은 처음부터 다시. */
+/** 새로고침 복원: 진행 중이던 진료는 사연 장면부터 다시, 응급실은 처음부터 다시. 이름 없는 예전 저장본은 시작 화면으로. */
 export function normalizeRehydrated(s: RunData): RunData {
+  if (!s.playerName && s.phase !== 'title') return blank();
   if (s.phase === 'exam') return { ...s, phase: 'story' };
   if (s.phase === 'emergency') return { ...s, emergencyResults: [], emergencyLog: [], currentId: s.emergencyIds[0] ?? null };
   return s;
@@ -66,7 +73,10 @@ export const useGame = create<GameState>()(
         // 데이터가 바뀌어 기록이 어긋나면 기록을 버린다
         records: Object.fromEntries(Object.entries(s.records).filter(([id]) => patients.some(p => p.id === id))),
       })),
-      start: () => { if (get().phase === 'title') set({ phase: 'intro' }); },
+      start: (name, heroId) => {
+        const playerName = name.trim();
+        if (get().phase === 'title' && playerName) set({ phase: 'intro', playerName, heroId });
+      },
       next: () => {
         const s = get();
         if (s.phase === 'intro') set({ phase: 'tutorial' });
@@ -108,13 +118,13 @@ export const useGame = create<GameState>()(
       restartRun: () => {
         if (get().phase === 'result') set({ phase: 'clinic', currentId: null, records: {}, emergencyResults: [], emergencyLog: [] });
       },
-      reset: () => set(blank()),
+      reset: () => set(s => ({ ...blank(), heroId: s.heroId, playerName: s.playerName })),
     }),
     {
       name: RUN_KEY,
       storage: createJSONStorage(() => localStorage),
       partialize: s => ({
-        phase: s.phase, examIds: s.examIds, emergencyIds: s.emergencyIds,
+        phase: s.phase, heroId: s.heroId, playerName: s.playerName, examIds: s.examIds, emergencyIds: s.emergencyIds,
         currentId: s.currentId, records: s.records, emergencyResults: s.emergencyResults, emergencyLog: s.emergencyLog,
       }),
       merge: (persisted, current) => ({ ...current, ...normalizeRehydrated({ ...blank(), ...(persisted as Partial<RunData>) }) }),

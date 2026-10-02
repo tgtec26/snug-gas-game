@@ -3,17 +3,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLock } from '@/components/hooks/useLock';
 import { DoctorPortraitArt } from '@/components/Portrait';
+import { useGame } from '@/game/store';
 
 interface Props { npcName: string; lines: string[]; onDone: () => void }
 
 const CHAR_MS = 18;
 
-/** 읽는 장면의 대사창. 한 번에 한 줄(1~2문장)씩, 탭·Enter·Space로 넘긴다. 전환 직후 0.7초는 입력 잠금. */
+/** 읽는 장면의 대사창. 한 번에 한 줄(1~2문장)씩, 탭·Enter·Space로 넘긴다. 전환 직후 0.7초는 입력 잠금. 대사의 {name}은 학생이 입력한 이름으로 바꾼다. */
 export function DialogBox({ npcName, lines, onDone }: Props) {
   const [idx, setIdx] = useState(0);
   const [shown, setShown] = useState(0);
   const locked = useLock('short');
-  const line = lines[idx] ?? '';
+  const playerName = useGame(s => s.playerName);
+  const line = (lines[idx] ?? '').replaceAll('{name}', playerName);
   const complete = shown >= line.length;
 
   useEffect(() => {

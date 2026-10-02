@@ -21,7 +21,8 @@
 | 환자 8 + 응급실 문 | `patients/*` | 대기실, 검사 장치 고스트, 진단서 |
 | 사연 장면 8 | `story/*` | 사연 장면 |
 | 실험 기구 9 | `equip/*` (beaker, gauge, thermo, knob, barrel, grip, ball, lens, ice) | 검사 장치, 담그기, 구슬 흔들기, 피날레 펌프 |
-| 소품 9 | `props/*` (glove, goggles, kid, bottle, palm, rocket, pumpbody, pumphandle, pad) | 담그기, 구슬 흔들기, 피날레 |
+| 소품 8 | `props/*` (glove, goggles, bottle, palm, rocket, pumpbody, pumphandle, pad) | 담그기, 구슬 흔들기, 피날레 |
+| 진행 캐릭터 3 | `hero/*` (boy, girl1, girl2). boy는 예전 `props/kid`를 옮긴 것(2026-10-02) | 시작 화면 카드, 담그기, 결과 카드 |
 
 변하는 부분(물 높이, 기체, 바늘, 수은, 다이얼 표시, 눈금, 입자, 섬광, 도장 글자)은 코드로 그린다. 그림은 틀(비커, 계기 바탕, 주사기 통, 손잡이 등)만 맡는다.
 
@@ -65,3 +66,19 @@
 ## 소리
 
 새 효과음 7종은 Freesound CC0 녹음(`public/assets/audio/`의 `<id>_<이름>.mp3`)으로 교체했다(`docs/principles-check.md` 참고). **귀로 듣고 고르지 못했다** — 어색한 것은 `local-game-audio-studio`의 카탈로그에서 다른 후보로 바꾼다. 배경음 3개와 정답·오답·성공음은 다른 게임의 것을 재활용한다.
+
+## 진행 캐릭터 3명 (2026-10-02, codex gpt-5.5)
+
+시작 화면에서 고르는 견습 공기 의사 3명(남 1, 여 2). 모두 흰 가운 차림의 허리 위 정면, 팔을 내리고 두 손이 아래에 보이는 자세다. 담그기 장면이 보안경·장갑을 같은 좌표에 겹치므로 **세 그림의 틀(387×640), 몸 중심, 허리 선이 같아야 한다**. 이름은 학생이 입력하므로 파일명·그림에 이름을 넣지 않는다.
+
+| 파일 | 모습 |
+|---|---|
+| `hero/boy.webp` | 갈색 짧은 머리, 파란 티셔츠 (기존 `props/kid.webp`, 원본 `props_sheet.png`) |
+| `hero/girl1.webp` | 검은 단발과 일자 앞머리, 민트색 티셔츠 |
+| `hero/girl2.webp` | 갈색 높은 묶음 머리, 산호색 티셔츠 |
+
+- 원본: `docs/assets-source/hero_girls_sheet.png` (두 명이 한 장). boy 그림을 참고 그림으로 넣어 화풍·자세·가운을 맞췄다.
+- 만들기: `CODEX_MODEL=gpt-5.5 scripts/gen_image.sh docs/assets-source/hero_girls_sheet.png "<아래 프롬프트>" <boy를 PNG로 바꾼 파일>`
+- 프롬프트: "Two characters side by side in ONE image. Fully transparent background (alpha channel PNG), no background, no ground shadow, no text. Both are Korean middle-school GIRLS drawn in exactly the same cartoon style, outline weight, proportions and framing as the attached reference boy: waist-up, front-facing, friendly smile, arms hanging straight down at the sides with both hands visible at the bottom, wearing the same white lab coat with a chest pocket. Girl 1 (left): short black bob hair with straight bangs, mint-green t-shirt under the coat, slightly rounder face. Girl 2 (right): brown hair tied in a high ponytail with side-swept bangs, coral-pink t-shirt under the coat, slightly slimmer face. Each girl is the same size and has the same head, eye and hand positions as the reference boy (safety goggles and gloves will be overlaid later). Leave an empty transparent gap between the two girls at least half a character wide. Nothing else in the image."
+- 자르기: `slice_sheet.py`의 경계 상자 자르기는 묶음 머리 때문에 몸 중심이 틀어져 쓰지 않았다. 시트에서 몸 중심 x(girl1 416.5, girl2 1096)를 가운데로, 허리 선(y 1020)을 아래로 둔 630×1042 창을 잘라 387×640으로 줄였다(WebP quality 90).
+- 계정 주의: `~/.codex/config.toml`의 기본 모델이 다시 `gpt-6.1-sol`이라 `CODEX_MODEL=gpt-5.5`를 붙여야 한다(전역 설정은 건드리지 않음).

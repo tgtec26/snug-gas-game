@@ -87,7 +87,7 @@ export class DipScene extends Phaser.Scene {
     const im = (k: string, d: number) => this.add.image(0, 0, `sp_${k}`).setDepth(d);
     this.sp = {
       barrel: im('barrel', 11), grip: im('grip', 13),
-      kid: im('kid', 8), gogglesWorn: im('goggles', 11).setVisible(false), gloveL: im('glove', 11).setVisible(false), gloveR: im('glove', 11).setVisible(false).setFlipX(true),
+      kid: this.add.image(0, 0, `hero_${useGame.getState().heroId}`).setDepth(8), gogglesWorn: im('goggles', 11).setVisible(false), gloveL: im('glove', 11).setVisible(false), gloveR: im('glove', 11).setVisible(false).setFlipX(true),
       gloveTray: im('glove', 11), gogglesTray: im('goggles', 11),
     };
     const key = this.textures.exists(`patient_${patient.id}`) ? `patient_${patient.id}` : `patient_${patient.id}_ph`; const p = this.PL;

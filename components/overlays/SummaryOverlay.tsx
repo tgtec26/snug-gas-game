@@ -21,6 +21,8 @@ const CARD_NAME: Record<string, (id: string, name: (pid: string) => string) => s
 export function SummaryOverlay() {
   const records = useGame(s => s.records);
   const emergencyResults = useGame(s => s.emergencyResults);
+  const heroId = useGame(s => s.heroId);
+  const playerName = useGame(s => s.playerName);
   const restartRun = useGame(s => s.restartRun);
   const reset = useGame(s => s.reset);
   const patients = useDataStore(s => s.patients);
@@ -58,7 +60,16 @@ export function SummaryOverlay() {
     <div className="absolute inset-0 bg-black/70 pointer-events-auto flex items-center justify-center">
       <div className="relative" style={{ animation: 'pop .5s cubic-bezier(.2,1.4,.4,1) both' }}>
         <div ref={card} className="w-[760px] rounded-3xl bg-[#fbf6ea] border-[6px] border-amber-300 px-10 py-8 text-slate-900">
-          <div className="text-[34px] font-black border-b-2 border-slate-300 pb-2 mb-4">오늘의 진료 결과</div>
+          <div className="flex items-center gap-4 border-b-2 border-slate-300 pb-2 mb-4">
+            <div className="w-[68px] h-[68px] shrink-0 rounded-full overflow-hidden bg-teal-100 border-[3px] border-amber-300">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/assets/hero/${heroId}.webp`} alt="" draggable={false} className="block w-full" />
+            </div>
+            <div>
+              <div className="text-[34px] font-black leading-tight">오늘의 진료 결과</div>
+              <div className="text-[20px] text-slate-600">견습 공기 의사 <b className="text-slate-900">{playerName}</b></div>
+            </div>
+          </div>
           <div className="flex items-center gap-8 mb-4">
             <div className="flex items-center gap-2 text-[64px] font-black text-amber-500 leading-none tabular-nums" aria-label={`별 ${sum.stars}개`}>
               <StarIcon size={64} />{sum.stars}

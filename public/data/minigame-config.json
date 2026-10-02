@@ -9,6 +9,10 @@
     "decayPerSec": 0.02,
     "hitMinSpeed": 60
   },
+  "hero": {
+    "nameMax": 8,
+    "cardSize": 210
+  },
   "emergencyRoundMs": 18000,
   "lockMs": 700,
   "longLockMs": 1200,
