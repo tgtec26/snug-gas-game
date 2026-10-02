@@ -60,6 +60,13 @@ describe('이름 부르기', () => {
   });
 });
 
+describe('조절기 잠금 안내', () => {
+  it('잠긴 조절기를 만졌을 때 되돌리는 방법을 알려 주는 한 줄이 있다', () => {
+    const h = real.dialog.hints as Record<string, string>;
+    expect(h.lockedDial).toContain('되돌리기'); expect(h.lockedPiston).toContain('되돌리기'); expect(h.dialClosed).toBeTruthy();
+  });
+});
+
 describe('도구', () => {
   it('문장 수', () => { expect(sentenceCount('하나예요.')).toBe(1); expect(sentenceCount('하나예요! 둘이에요?')).toBe(2); expect(sentenceCount('1.5배예요.')).toBe(1); });
   it('금지어 목록에 분자·원자·켈빈·파스칼·정비례가 있다', () => { for (const w of ['분자', '원자', '켈빈', '파스칼', '정비례']) expect(FORBIDDEN).toContain(w); });

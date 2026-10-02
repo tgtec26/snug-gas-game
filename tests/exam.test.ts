@@ -179,8 +179,8 @@ describe('측정 진료: 고무공 눈금 읽기', () => {
 
   it('피스톤은 1 mL 눈금에 딸깍 멈추고 온도 다이얼은 열리지 않는다', () => {
     let s = createExam(cfg, ball);
-    s = movePiston(cfg, s, 17.4);
-    expect(s.device.piston).toBe(17);
+    s = movePiston(cfg, s, 24.4);
+    expect(s.device.piston).toBe(24);
     const t = moveTemp(cfg, createExam(cfg, ball), 2);
     expect(t.device.tempStep).toBe(0);
     expect(moveTemp(cfg, createExam(cfg, byId('snackbag')), 2).device.tempStep).toBe(2);
@@ -197,6 +197,22 @@ describe('측정 진료: 고무공 눈금 읽기', () => {
     expect(checkPistonRun(cfg, s.readings).complete).toBe(true);
   });
 
+  it('빠르게 끌어도 지금 눈금의 점이 찍혀야 다음 눈금으로 간다', () => {
+    let s = createExam(cfg, ball);
+    s = movePiston(cfg, s, 12);                       // 한 번에 끝까지 끌기
+    expect(s.device.piston).toBe(20);                 // 20 mL의 점이 아직 없어 제자리
+    s = run(ball, s, cfg.measure.dwellMs + 100).s;    // 20 mL에서 점이 찍힌다
+    s = movePiston(cfg, s, 12);
+    expect(s.device.piston).toBe(19);                 // 다음 눈금까지만 간다
+    s = movePiston(cfg, s, 17);
+    expect(s.device.piston).toBe(19);                 // 19 mL의 점이 찍히기 전에는 더 못 간다
+  });
+  it('눈금을 모두 읽으면 제한이 풀리고, 당기는 방향과 이어 당기기(explore)는 막지 않는다', () => {
+    let s = createExam(cfg, ball);
+    expect(movePiston(cfg, s, 28).device.piston).toBe(28);   // 위로 당기는 것은 자유
+    for (let v = 20; v >= 12; v--) s = pressTo(s, v, cfg.measure.dwellMs + 100).s;
+    expect(movePiston(cfg, s, 12).device.piston).toBe(12);
+  });
   it('12 mL로 바로 끌면 오래 머물러도 재현이 아니다 (눈금 건너뛰기 없음)', () => {
     const r = pressTo(createExam(cfg, ball), 12, cfg.holdMs + 2000);
     expect(r.events.some(e => e.type === 'step-done')).toBe(false);

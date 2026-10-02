@@ -162,6 +162,14 @@ export class ClinicScene extends Phaser.Scene {
   private locked(variable: 'pressure' | 'temperature') {
     return heldConstant(this.cfg, this.st.device) === variable || (variable === 'temperature' && !this.st.tempOpen);
   }
+  /** 잠긴 조절기를 만졌을 때: 흔들고 소리를 내고, 왜 안 되는지와 되돌리는 방법을 한 줄로 알려 준다. */
+  private refuse(variable: 'pressure' | 'temperature') {
+    const now = performance.now();
+    if (variable === 'pressure') this.shake.piston = now + 350; else this.shake.dial = now + 350;
+    playSfx('error');
+    const h = useDataStore.getState().dialog?.hints; if (!h) return;
+    this.say(variable === 'pressure' ? h.lockedPiston : this.st.tempOpen ? h.lockedDial : h.dialClosed);
+  }
   /** 조작이 있었음을 기록한다. 한 줄 힌트는 조작이 이어져도 읽을 수 있게 시간이 지나야 꺼진다. */
   private act() { this.lastActionAt = performance.now(); }
 
@@ -173,12 +181,12 @@ export class ClinicScene extends Phaser.Scene {
     const vol = deviceVolume(this.cfg, this.st.device);
     const hy = this.handleCY(vol); const hit = L.piston.hit;
     if (Math.abs(x - L.barrel.x) < hit / 2 && Math.abs(y - hy) < hit * 0.32) {
-      if (this.locked('pressure')) { this.shake.piston = performance.now() + 350; playSfx('error'); return; }
+      if (this.locked('pressure')) { this.refuse('pressure'); return; }
       this.drag = { kind: 'piston', dy: hy - y }; this.act(); return;
     }
     const d = L.dial;
     if (Math.hypot(x - d.x, y - d.y) < d.r + 28) {
-      if (this.locked('temperature')) { this.shake.dial = performance.now() + 350; playSfx('error'); return; }
+      if (this.locked('temperature')) { this.refuse('temperature'); return; }
       this.drag = { kind: 'dial' }; this.act(); this.onMove(p);
     }
   }
@@ -200,12 +208,12 @@ export class ClinicScene extends Phaser.Scene {
 
   private nudgePiston(dir: number) {
     if (this.st.done || roundBlocked()) return;
-    if (this.locked('pressure')) { this.shake.piston = performance.now() + 350; playSfx('error'); return; }
+    if (this.locked('pressure')) { this.refuse('pressure'); return; }
     this.st = movePiston(this.cfg, this.st, this.st.device.piston + dir); this.act();
   }
   private nudgeTemp(dir: number) {
     if (this.st.done || roundBlocked()) return;
-    if (this.locked('temperature')) { this.shake.dial = performance.now() + 350; playSfx('error'); return; }
+    if (this.locked('temperature')) { this.refuse('temperature'); return; }
     this.st = moveTemp(this.cfg, this.st, this.st.device.tempStep + dir); this.act();
   }
   private reset() { if (!this.st.done && !roundBlocked()) { this.st = resetDevice(this.cfg, this.st); this.drag = null; this.hintText.setAlpha(0); this.act(); } }
@@ -222,6 +230,8 @@ export class ClinicScene extends Phaser.Scene {
     const r = tickExam(this.cfg, this.patient, this.st, dt);
     this.st = r.state;
     for (const e of r.events) this.onEvent(e);
+    // 눈금 점이 찍혀 앞이 열리면, 포인터를 움직이지 않아도 피스톤이 다음 눈금까지 따라간다
+    if (this.drag?.kind === 'piston' && this.st.snap) this.onMove(this.input.activePointer);
     this.draw();
     this.lens.update(dt);
     const goals = useDataStore.getState().dialog?.goals; if (goals) this.goal.set(this.st.done ? '' : goalFor(goals, this.patient, this.st.stepIndex));

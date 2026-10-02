@@ -21,6 +21,12 @@ export function addBg(scene: Phaser.Scene, artKey: string, placeholderKey: strin
   return scene.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, key).setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
 }
 
+/** 담그기 장면의 사람: 착용한 보호구에 맞는 그림 (hero_<id>, _gloves, _goggles, _both). 착용 그림은 기본 그림과 같은 틀이다. */
+export const heroKey = (id: string, worn: readonly string[]): string => {
+  const g = worn.includes('gloves'), s = worn.includes('goggles');
+  return `hero_${id}${g && s ? '_both' : g ? '_gloves' : s ? '_goggles' : ''}`;
+};
+
 /** 텍스처 키 ← public/assets/ 안의 파일 (docs/art-todo.md 표). 그림을 넣으면 manifest.json에 경로를 한 줄 더한다. */
 export const ART: Record<string, string> = {
   'bg/clinic.webp': 'clinic_bg',
@@ -41,6 +47,15 @@ export const ART: Record<string, string> = {
   'hero/boy.webp': 'hero_boy',
   'hero/girl1.webp': 'hero_girl1',
   'hero/girl2.webp': 'hero_girl2',
+  'hero/boy_gloves.webp': 'hero_boy_gloves',
+  'hero/boy_goggles.webp': 'hero_boy_goggles',
+  'hero/boy_both.webp': 'hero_boy_both',
+  'hero/girl1_gloves.webp': 'hero_girl1_gloves',
+  'hero/girl1_goggles.webp': 'hero_girl1_goggles',
+  'hero/girl1_both.webp': 'hero_girl1_both',
+  'hero/girl2_gloves.webp': 'hero_girl2_gloves',
+  'hero/girl2_goggles.webp': 'hero_girl2_goggles',
+  'hero/girl2_both.webp': 'hero_girl2_both',
   'props/bottle.webp': 'sp_bottle',
   'props/palm.webp': 'sp_palm',
   'props/rocket.webp': 'sp_rocket',

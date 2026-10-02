@@ -23,6 +23,7 @@
 | 실험 기구 9 | `equip/*` (beaker, gauge, thermo, knob, barrel, grip, ball, lens, ice) | 검사 장치, 담그기, 구슬 흔들기, 피날레 펌프 |
 | 소품 8 | `props/*` (glove, goggles, bottle, palm, rocket, pumpbody, pumphandle, pad) | 담그기, 구슬 흔들기, 피날레 |
 | 진행 캐릭터 3 | `hero/*` (boy, girl1, girl2). boy는 예전 `props/kid`를 옮긴 것(2026-10-02) | 시작 화면 카드, 담그기, 결과 카드 |
+| 보호구 착용 9 | `hero/<id>_gloves`, `_goggles`, `_both` (3명 × 3) | 담그기에서 장갑·보안경을 끌어 입히면 사람 그림이 바뀐다 |
 
 변하는 부분(물 높이, 기체, 바늘, 수은, 다이얼 표시, 눈금, 입자, 섬광, 도장 글자)은 코드로 그린다. 그림은 틀(비커, 계기 바탕, 주사기 통, 손잡이 등)만 맡는다.
 
@@ -82,3 +83,13 @@
 - 프롬프트: "Two characters side by side in ONE image. Fully transparent background (alpha channel PNG), no background, no ground shadow, no text. Both are Korean middle-school GIRLS drawn in exactly the same cartoon style, outline weight, proportions and framing as the attached reference boy: waist-up, front-facing, friendly smile, arms hanging straight down at the sides with both hands visible at the bottom, wearing the same white lab coat with a chest pocket. Girl 1 (left): short black bob hair with straight bangs, mint-green t-shirt under the coat, slightly rounder face. Girl 2 (right): brown hair tied in a high ponytail with side-swept bangs, coral-pink t-shirt under the coat, slightly slimmer face. Each girl is the same size and has the same head, eye and hand positions as the reference boy (safety goggles and gloves will be overlaid later). Leave an empty transparent gap between the two girls at least half a character wide. Nothing else in the image."
 - 자르기: `slice_sheet.py`의 경계 상자 자르기는 묶음 머리 때문에 몸 중심이 틀어져 쓰지 않았다. 시트에서 몸 중심 x(girl1 416.5, girl2 1096)를 가운데로, 허리 선(y 1020)을 아래로 둔 630×1042 창을 잘라 387×640으로 줄였다(WebP quality 90).
 - 계정 주의: `~/.codex/config.toml`의 기본 모델이 다시 `gpt-6.1-sol`이라 `CODEX_MODEL=gpt-5.5`를 붙여야 한다(전역 설정은 건드리지 않음).
+
+## 보호구 착용 그림 9장 (2026-10-02, codex gpt-5.5)
+
+담그기에서 장갑·보안경을 사람 위에 겹쳐 올리면 어색해서(보안경이 이마에 걸리고 장갑이 몸 옆에 떠 있음), 착용한 모습 자체를 그림으로 만들었다. 한 명당 **장갑만 / 보안경만 / 둘 다** 세 가지이고, 아무것도 안 낀 모습은 기본 그림(`hero/<id>.webp`)이다. 장갑·보안경 스프라이트(`props/glove`, `props/goggles`)는 트레이에 놓인 아이템으로만 쓴다.
+
+- 원본: `docs/assets-source/hero_<id>_gear.png` (한 명당 세 모습을 가로로 한 장, 왼쪽부터 장갑 / 보안경 / 둘 다).
+- 만들기(한 명씩, 순서대로): `CODEX_MODEL=gpt-5.5 scripts/gen_image.sh docs/assets-source/hero_<id>_gear.png "<프롬프트>" <기본 그림 PNG> <props/goggles PNG> <props/glove PNG>`
+- 프롬프트: "Three versions of the SAME character side by side in ONE image (left, middle, right). Fully transparent background (alpha channel PNG), no background, no ground shadow, no text. The FIRST attached image is the character: keep exactly the same face, hair, outfit, proportions, outline style, size and body position in all three versions; only the safety gear differs. Waist-up, front-facing, arms hanging straight down at the sides, both hands visible at the bottom, same framing as the first image. LEFT version: wearing bright orange rubber lab gloves on both hands (the hands are gloved), no goggles. MIDDLE version: wearing clear light-blue safety goggles with a dark strap worn over the eyes (covering the eyes, not on the forehead), bare hands. RIGHT version: wearing both the goggles over the eyes and the orange gloves. The SECOND attached image shows the goggles and the THIRD shows the glove: match their design and colors. Leave an empty transparent gap between the three versions at least half a character wide. Nothing else in the image."
+- 자르기: `python3 scripts/slice_gear.py docs/assets-source/hero_<id>_gear.png <id>`. 보호구와 상관없는 가슴 높이의 가운 폭과 중심, 맨 아래 선을 기본 그림(387×640)에 맞춘다(폭 오차 0.3px 이하). 결과가 기본 그림과 틀이 같아서 담그기에서 바꿔 끼워도 위치가 튀지 않는다.
+- 알려진 차이: 착용 그림은 새로 그려서 기본 그림과 얼굴 표정·머리 결이 조금 다르다. 거슬리면 기본 그림 3장도 같은 방식으로 다시 그려 한 벌로 맞춘다.

@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { hiDpi, addBg, TEXT, OUTLINE } from '@/game/systems/render';
+import { hiDpi, addBg, heroKey, TEXT, OUTLINE } from '@/game/systems/render';
 import { attachRouter } from '@/game/systems/sceneRouter';
 import { useGame } from '@/game/store';
 import { useDataStore } from '@/game/dataStore';
@@ -56,7 +56,7 @@ export class DipScene extends Phaser.Scene {
   private goal!: GoalBanner;
   private sp!: {
     barrel: Phaser.GameObjects.Image; grip: Phaser.GameObjects.Image;
-    kid: Phaser.GameObjects.Image; gogglesWorn: Phaser.GameObjects.Image; gloveL: Phaser.GameObjects.Image; gloveR: Phaser.GameObjects.Image;
+    kid: Phaser.GameObjects.Image;
     gloveTray: Phaser.GameObjects.Image; gogglesTray: Phaser.GameObjects.Image;
   };
 
@@ -87,7 +87,7 @@ export class DipScene extends Phaser.Scene {
     const im = (k: string, d: number) => this.add.image(0, 0, `sp_${k}`).setDepth(d);
     this.sp = {
       barrel: im('barrel', 11), grip: im('grip', 13),
-      kid: this.add.image(0, 0, `hero_${useGame.getState().heroId}`).setDepth(8), gogglesWorn: im('goggles', 11).setVisible(false), gloveL: im('glove', 11).setVisible(false), gloveR: im('glove', 11).setVisible(false).setFlipX(true),
+      kid: this.add.image(0, 0, heroKey(useGame.getState().heroId, this.worn)).setDepth(8),
       gloveTray: im('glove', 11), gogglesTray: im('goggles', 11),
     };
     const key = this.textures.exists(`patient_${patient.id}`) ? `patient_${patient.id}` : `patient_${patient.id}_ph`; const p = this.PL;
@@ -274,10 +274,7 @@ export class DipScene extends Phaser.Scene {
     const { x, y, r } = this.L.person;
     g.fillStyle(0x000000, 0.2); g.fillEllipse(x, y + r + 70, r * 2, 26);
     if (this.drag?.kind === 'gear') { g.lineStyle(6, 0xffc933, 0.5 + 0.4 * Math.sin(now / 150)); g.strokeCircle(x, y, r + 30); }
-    this.sp.kid.setPosition(x, y + 5).setDisplaySize(151, 250);
-    this.sp.gogglesWorn.setVisible(this.worn.includes('goggles')).setPosition(x, y - 72).setDisplaySize(78, 78 * (196 / 379));
-    const gl = this.worn.includes('gloves');
-    this.sp.gloveL.setVisible(gl).setPosition(x - 64, y + 96).setDisplaySize(34, 53); this.sp.gloveR.setVisible(gl).setPosition(x + 64, y + 96).setDisplaySize(34, 53);
+    this.sp.kid.setTexture(heroKey(useGame.getState().heroId, this.worn)).setPosition(x, y + 5).setDisplaySize(151, 250);   // 착용 그림으로 바뀐다
   }
 
   private drawGearIcon(g: Phaser.GameObjects.Graphics, gear: Gear, x: number, y: number, s: number) {

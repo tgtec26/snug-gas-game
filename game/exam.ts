@@ -59,10 +59,17 @@ export const createExam = (cfg: Experiments, patient: Patient): ExamState => ({
 
 const round1 = (v: number) => Math.round(v * 10) / 10;
 
+/** 측정 진료의 첫 단계: 아직 점이 찍히지 않은 가장 앞 눈금. 피스톤은 이 눈금보다 더 눌러 내려갈 수 없다(건너뛰기 없음). */
+function pressFloor(cfg: Experiments, st: ExamState): number {
+  if (!st.snap || st.stepIndex !== 0) return cfg.syringe.min;
+  const missing = checkPistonRun(cfg, st.readings).missing;
+  return missing.length ? Math.max(cfg.syringe.min, Math.max(...missing)) : cfg.syringe.min;
+}
+
 /** 피스톤을 움직인다. 온도 다이얼이 원점이 아니면(압력 일정) 무시. */
 export function movePiston(cfg: Experiments, st: ExamState, volume: number): ExamState {
   if (st.done || !canUse(cfg, st.device, 'pressure')) return st;
-  const clamped = clamp(volume, cfg.syringe.min, cfg.syringe.max);
+  const clamped = clamp(volume, pressFloor(cfg, st), cfg.syringe.max);
   const v = st.snap ? Math.round(clamped) : round1(clamped);
   if (v === st.device.piston && st.used === 'pressure') return st;
   return { ...st, device: { piston: v, tempStep: 0 }, used: 'pressure', firstUsed: st.firstUsed ?? 'pressure' };

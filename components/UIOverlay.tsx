@@ -5,6 +5,7 @@ import { HUD } from '@/components/HUD';
 import { TopControls } from '@/components/TopControls';
 import { AudioRunner } from '@/components/AudioRunner';
 import { DevSkip } from '@/components/DevSkip';
+import { StageNav } from '@/components/StageNav';
 import { TitleOverlay } from '@/components/overlays/TitleOverlay';
 import { IntroOverlay } from '@/components/overlays/IntroOverlay';
 import { ClinicOverlay } from '@/components/overlays/ClinicOverlay';
@@ -42,6 +43,7 @@ export function UIOverlay() {
       <HUD />
       <Current />
       <DevSkip />
+      <StageNav />
       <DexOverlay />
       <TopControls />
       <AudioRunner />

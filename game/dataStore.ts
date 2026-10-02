@@ -13,7 +13,7 @@ export interface DialogConfig {
   diagnosis: { boyle: string[]; charles: string[] };
   tutorial: { card: string; line: string };
   goals: Goals;
-  hints: { wrongGauge: string; gear: string; submerge: string; hold: string; notThere: string };
+  hints: { wrongGauge: string; gear: string; submerge: string; hold: string; notThere: string; lockedDial: string; lockedPiston: string; dialClosed: string };
   ending: string[];
   address: { diagnosis: string; finale: string };   // 주인공을 이름으로 부르는 문구 ({name}, {count})
 }
