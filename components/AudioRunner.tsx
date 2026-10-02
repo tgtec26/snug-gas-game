@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useGame } from '@/game/store';
-import { playBgm, stopBgm, unlockAudio, type BgmSlot } from '@/game/audio';
+import { playBgm, stopBgm, unlockAudio, setPageHidden, type BgmSlot } from '@/game/audio';
 import { useDataStore } from '@/game/dataStore';
 import type { Phase } from '@/game/types';
 
@@ -23,7 +23,9 @@ export function AudioRunner() {
   useEffect(() => {
     window.addEventListener('pointerdown', unlockAudio);
     window.addEventListener('keydown', unlockAudio);
-    return () => { window.removeEventListener('pointerdown', unlockAudio); window.removeEventListener('keydown', unlockAudio); stopBgm(); };
+    const onVis = () => setPageHidden(document.hidden);
+    document.addEventListener('visibilitychange', onVis);
+    return () => { window.removeEventListener('pointerdown', unlockAudio); window.removeEventListener('keydown', unlockAudio); document.removeEventListener('visibilitychange', onVis); stopBgm(); };
   }, []);
 
   return null;

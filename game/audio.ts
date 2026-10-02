@@ -31,6 +31,26 @@ export function validateAudioConfig(c: AudioConfig): string[] {
 let config: AudioConfig | null = null;
 let current: { slot: BgmSlot; el: HTMLAudioElement } | null = null;
 let muted = false;
+let mutedLoaded = false;
+
+const MUTE_KEY = 'gas-muted';
+/** 같은 효과음이 이 간격(ms) 안에 다시 울리면 무시한다(연타 때 소리가 겹쳐 터지는 것 방지). */
+export const SFX_MIN_GAP_MS = 90;
+const lastSfxAt: Partial<Record<SfxSlot, number>> = {};
+
+/** 같은 효과음의 최소 간격 검사. 통과하면 시각을 기록한다. */
+export function sfxGateOpen(slot: SfxSlot, now: number): boolean {
+  const last = lastSfxAt[slot];
+  if (last !== undefined && now - last < SFX_MIN_GAP_MS) return false;
+  lastSfxAt[slot] = now;
+  return true;
+}
+
+function loadMuted() {
+  if (mutedLoaded) return;
+  mutedLoaded = true;
+  try { muted = window.localStorage.getItem(MUTE_KEY) === '1'; } catch { /* 저장소 차단 — 기본값 유지 */ }
+}
 
 export function configureAudio(c: AudioConfig) {
   config = c;
@@ -43,14 +63,15 @@ function safePlay(el: HTMLAudioElement) {
 
 export function playBgm(slot: BgmSlot) {
   if (typeof window === 'undefined' || !config) return;
-  if (current?.slot === slot) { if (current.el.paused) safePlay(current.el); return; }
+  loadMuted();
+  if (current?.slot === slot) { if (current.el.paused && !document.hidden) safePlay(current.el); return; }
   current?.el.pause();
   const el = new Audio(`/assets/audio/${config.bgm[slot]}.mp3`);
   el.loop = true;
   el.volume = config.bgmVolume;
   el.muted = muted;
   current = { slot, el };
-  safePlay(el);
+  if (!document.hidden) safePlay(el);
 }
 
 export function stopBgm() {
@@ -58,21 +79,66 @@ export function stopBgm() {
   current = null;
 }
 
-/** rate가 1보다 크면 음이 높아진다(콤보가 쌓일수록 올라가는 소리). */
-export function playSfx(slot: SfxSlot, rate = 1) {
-  if (typeof window === 'undefined' || muted || !config) return;
-  const el = new Audio(`/assets/audio/${config.sfx[slot]}.mp3`);
-  el.volume = config.sfxVolume;
-  if (rate !== 1) { el.preservesPitch = false; el.playbackRate = rate; }
-  safePlay(el);
+/** 탭이 숨겨지면 BGM을 멈추고, 돌아오면 이어서 튼다. */
+export function setPageHidden(hidden: boolean) {
+  if (!current) return;
+  if (hidden) current.el.pause(); else safePlay(current.el);
 }
 
+// 효과음은 WebAudio로 재생한다(아이폰 Safari는 HTMLAudio 음량 조절이 안 된다).
+let ctx: AudioContext | null = null;
+const buffers = new Map<string, Promise<AudioBuffer | null>>();
+
+function getCtx(): AudioContext | null {
+  if (ctx) return ctx;
+  const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AC) return null;
+  try { ctx = new AC(); } catch { ctx = null; }
+  return ctx;
+}
+
+function getBuffer(c: AudioContext, name: string): Promise<AudioBuffer | null> {
+  let p = buffers.get(name);
+  if (!p) {
+    p = fetch(`/assets/audio/${name}.mp3`).then(r => r.arrayBuffer()).then(b => c.decodeAudioData(b)).catch(() => null);
+    buffers.set(name, p);
+  }
+  return p;
+}
+
+/** rate가 1보다 크면 음이 높아진다(콤보가 쌓일수록 올라가는 소리). */
+export function playSfx(slot: SfxSlot, rate = 1) {
+  if (typeof window === 'undefined' || !config) return;
+  loadMuted();
+  if (muted || !sfxGateOpen(slot, performance.now())) return;
+  const c = getCtx();
+  if (!c) return;
+  const volume = config.sfxVolume;
+  void c.resume().catch(() => {});
+  void getBuffer(c, config.sfx[slot]).then(buf => {
+    if (!buf || muted) return;
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.value = rate;
+    const g = c.createGain();
+    g.gain.value = volume;
+    src.connect(g).connect(c.destination);
+    src.start();
+  });
+}
+
+/** 첫 사용자 입력에서 호출: 오디오 컨텍스트를 풀고 BGM을 (다시) 시작한다. */
 export function unlockAudio() {
-  if (current?.el.paused) safePlay(current.el);
+  loadMuted();
+  const c = getCtx();
+  if (c && c.state === 'suspended') void c.resume().catch(() => {});
+  if (current?.el.paused && !document.hidden) safePlay(current.el);
 }
 
 export function setMuted(m: boolean) {
+  loadMuted();
   muted = m;
   if (current) current.el.muted = m;
+  try { window.localStorage.setItem(MUTE_KEY, m ? '1' : '0'); } catch { /* 저장 실패 — 이번 방문에만 적용 */ }
 }
-export const isMuted = () => muted;
+export function isMuted() { loadMuted(); return muted; }

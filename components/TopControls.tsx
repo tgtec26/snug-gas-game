@@ -7,7 +7,7 @@ const btn = 'pointer-events-auto w-11 h-11 rounded-xl bg-slate-900/80 border-2 b
 
 /** 오른쪽 위 전체 화면·음소거. 누른 뒤 blur()해서 Enter·Space가 다시 누르지 않게 한다. */
 export function TopControls() {
-  const [mute, setMute] = useState(isMuted());
+  const [mute, setMute] = useState(isMuted);   // 데이터 로딩 뒤에야 마운트되므로(서버 렌더 없음) 저장된 상태를 바로 읽는다
   const [full, setFull] = useState(false);
   useEffect(() => {
     const on = () => setFull(!!document.fullscreenElement);
