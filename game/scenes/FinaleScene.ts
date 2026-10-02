@@ -4,6 +4,7 @@ import { attachRouter } from '@/game/systems/sceneRouter';
 import { useGame } from '@/game/store';
 import { useDataStore } from '@/game/dataStore';
 import { summarize } from '@/game/summary';
+import { withName } from '@/game/name';
 import { playSfx } from '@/game/audio';
 import { GoalBanner } from '@/game/systems/goalBanner';
 
@@ -60,7 +61,7 @@ export class FinaleScene extends Phaser.Scene {
     const sum = summarize({ records: s.records, emergencyResults: s.emergencyResults }, patients);
     this.stars = sum.stars;
     this.countText = this.add.text(640, 330, '', { ...TEXT, ...OUTLINE, fontSize: '120px', fontStyle: 'bold', color: '#ffd54f' }).setOrigin(0.5).setDepth(30).setAlpha(0);
-    this.treatedText = this.add.text(640, 450, `치료한 환자 ${sum.treated}명`, { ...TEXT, ...OUTLINE, fontSize: '40px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5).setDepth(30).setAlpha(0);
+    this.treatedText = this.add.text(640, 450, data.dialog ? withName(data.dialog.address.finale, s.playerName, sum.treated) : `치료한 환자 ${sum.treated}명`, { ...TEXT, ...OUTLINE, fontSize: '40px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5).setDepth(30).setAlpha(0);
     this.nextArrow = this.add.graphics().setDepth(30).setAlpha(0);
     this.nextArrow.fillStyle(0xffffff, 1); this.nextArrow.fillTriangle(1170, 720, 1170, 770, 1218, 745);
     this.tweens.add({ targets: this.nextArrow, x: -12, duration: 450, yoyo: true, repeat: -1 });

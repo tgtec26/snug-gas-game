@@ -55,6 +55,7 @@ export function validateDataset(d: Dataset): string[] {
     for (const w of FORBIDDEN) if (s.includes(w)) errs.push(`금지어 "${w}": ${s.slice(0, 30)}`);
   }
   for (const s of collectStrings(d.dialog)) {
+    if (/\{name\}[가-힣]/.test(s)) errs.push(`{name} 바로 뒤에 조사를 붙일 수 없다(공백이나 쉼표를 둔다): ${s.slice(0, 30)}`);
     if (sentenceCount(s) > 2) errs.push(`대사가 2문장을 넘는다: ${s.slice(0, 30)}`);
   }
   return errs;

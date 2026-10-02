@@ -14,7 +14,7 @@ export type DataFile = (typeof DATA_FILES)[number];
 
 export const filePathOf = (f: DataFile): string => (f === 'manifest' ? `public/assets/${f}.json` : `public/data/${f}.json`);
 
-const DIALOG_KEYS = ['doctor', 'intro', 'diagnosis', 'tutorial', 'goals', 'hints', 'ending'];
+const DIALOG_KEYS = ['doctor', 'intro', 'diagnosis', 'tutorial', 'goals', 'hints', 'ending', 'address'];
 
 /**
  * 파일 하나를 저장하기 전 검사. 다른 파일과 엮이는 검사(환자, 실험 설정, 대사끼리 맞는지 등)도 한다.

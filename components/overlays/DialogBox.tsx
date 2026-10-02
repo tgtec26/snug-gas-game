@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLock } from '@/components/hooks/useLock';
 import { DoctorPortraitArt } from '@/components/Portrait';
 import { useGame } from '@/game/store';
+import { withName } from '@/game/name';
 
 interface Props { npcName: string; lines: string[]; onDone: () => void }
 
@@ -15,7 +16,7 @@ export function DialogBox({ npcName, lines, onDone }: Props) {
   const [shown, setShown] = useState(0);
   const locked = useLock('short');
   const playerName = useGame(s => s.playerName);
-  const line = (lines[idx] ?? '').replaceAll('{name}', playerName);
+  const line = withName(lines[idx] ?? '', playerName);
   const complete = shown >= line.length;
 
   useEffect(() => {

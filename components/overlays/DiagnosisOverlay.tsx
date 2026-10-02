@@ -5,6 +5,7 @@ import { useGame } from '@/game/store';
 import { useDataStore } from '@/game/dataStore';
 import { lawOf } from '@/game/rules';
 import { addToDex } from '@/game/dex';
+import { withName } from '@/game/name';
 import { playSfx } from '@/game/audio';
 import { useLock } from '@/components/hooks/useLock';
 import { PatientIcon } from '@/components/art/PatientIcon';
@@ -25,6 +26,7 @@ export function DiagnosisOverlay() {
 function Diagnosis({ patient }: { patient: Patient }) {
   const next = useGame(s => s.next);
   const stars = useGame(s => s.records[patient.id]?.stars ?? 0);
+  const playerName = useGame(s => s.playerName);
   const dialog = useDataStore(s => s.dialog);
   const locked = useLock('long');
   const law = lawOf(patient.variable);
@@ -64,6 +66,7 @@ function Diagnosis({ patient }: { patient: Patient }) {
             </div>
           </div>
           <div className="flex-1 flex flex-col gap-5 text-[27px] leading-relaxed">
+            {dialog && <p className="text-[22px] font-black text-amber-700">{withName(dialog.address.diagnosis, playerName)}</p>}
             {dialog?.diagnosis[law].map((line, i) => <p key={i}>{line}</p>)}
           </div>
         </div>
