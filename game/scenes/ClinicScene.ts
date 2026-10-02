@@ -9,6 +9,7 @@ import {
 } from '@/game/exam';
 import { checkPistonRun, deviceVolume, heldConstant, needleFromVolume, pressureReading, stepTargetVolume, badgeText } from '@/game/rules';
 import { LensView } from '@/game/systems/lens';
+import { curveSamples, plotArea, toGraph, GRAPH_P_MAX } from '@/game/graph';
 import { GoalBanner } from '@/game/systems/goalBanner';
 import { goalFor } from '@/game/goals';
 import { inEmergency, roundBlocked, comboRate } from '@/game/systems/emergencyRound';
@@ -56,6 +57,7 @@ export class ClinicScene extends Phaser.Scene {
   private finishTimer: number | null = null;
   private popAt: Record<number, number> = {};
   private lastPistonVol = 0;
+  private graphDoneAt = 0;
   private lastPistonSound = 0;
   private lens!: LensView;
   private gxLabel!: Phaser.GameObjects.Text;
@@ -87,7 +89,7 @@ export class ClinicScene extends Phaser.Scene {
     this.goal = new GoalBanner(this, inEmergency() ? 764 : 44);
     this.gHand = this.add.graphics().setDepth(45);
     const lab = (t: string) => this.add.text(0, 0, t, { ...TEXT, fontSize: '18px', fontStyle: 'bold', color: '#37474f' }).setOrigin(0.5).setDepth(11).setVisible(false);
-    this.gxLabel = lab('부피'); this.gyLabel = lab('압력').setAngle(-90);
+    this.gxLabel = lab('압력'); this.gyLabel = lab('부피').setAngle(-90);   // 교과서 그림 Ⅵ-3: 가로 압력, 세로 부피
     this.sp = { grip: this.add.image(0, 0, 'sp_grip').setDepth(13) };
     this.GRIP_ASPECT = 366 / 113;
     const key = this.textures.exists(`patient_${patient.id}`) ? `patient_${patient.id}` : `patient_${patient.id}_ph`;
@@ -353,25 +355,33 @@ export class ClinicScene extends Phaser.Scene {
 
   /** 작은 그래프: 눈금을 읽을 때마다 점이 하나씩 찍힌다. 가로 = 부피 눈금, 세로 = 바늘의 상대 높이(수치 없음). */
   private drawGraph(g: Phaser.GameObjects.Graphics, now: number) {
-    const { x, y, w, h } = this.L.graph; const m = this.cfg.measure;
-    const lo = needleFromVolume(m.from, this.cfg.syringe.start), hi = needleFromVolume(m.to, this.cfg.syringe.start);
-    const px = (v: number) => x + 46 + ((v - m.to) / (m.from - m.to)) * (w - 70);
-    const py = (n: number) => y + h - 44 - ((n - lo) / (hi - lo)) * (h - 70);
+    const { x, y, w, h } = this.L.graph; const m = this.cfg.measure; const cfg = this.cfg;
+    const A = plotArea(this.L.graph);
     g.fillStyle(0x000000, 0.2); g.fillRoundedRect(x + 6, y + 8, w, h, 12);
     g.fillStyle(0xfdfcf7, 0.96); g.fillRoundedRect(x, y, w, h, 12); g.lineStyle(3, 0x546e7a, 1); g.strokeRoundedRect(x, y, w, h, 12);
-    g.lineStyle(3, 0x546e7a, 1); g.lineBetween(x + 34, y + 14, x + 34, y + h - 30); g.lineBetween(x + 34, y + h - 30, x + w - 12, y + h - 30);
-    g.fillStyle(0x546e7a, 1); g.fillTriangle(x + 34, y + 8, x + 28, y + 20, x + 40, y + 20); g.fillTriangle(x + w - 6, y + h - 30, x + w - 18, y + h - 36, x + w - 18, y + h - 24);
-    this.gxLabel.setPosition(x + (w + 34) / 2, y + h - 12).setVisible(true); this.gyLabel.setPosition(x + 17, y + (h - 30) / 2).setVisible(true);
-    const pts = this.st.readings.filter(r => r.dwellMs >= m.dwellMs && r.volume >= m.to && r.volume <= m.from).sort((a, b) => b.volume - a.volume)
-      .map(r => ({ v: r.volume, X: px(r.volume), Y: py(needleFromVolume(r.volume, this.cfg.syringe.start)) }));
-    if (pts.length > 1) {
-      g.lineStyle(3, 0xc0506a, 0.5); g.beginPath(); g.moveTo(pts[0].X, pts[0].Y);
-      for (const p of pts.slice(1)) g.lineTo(p.X, p.Y);
-      g.strokePath();
-    }
-    for (const p of pts) {
-      const pop = now - (this.popAt[p.v] ?? -1e9); const k = pop < 350 ? 1 + 0.9 * Math.sin((pop / 350) * Math.PI) : 1;
-      g.fillStyle(0xc0506a, 1); g.fillCircle(p.X, p.Y, 6 * k); g.lineStyle(2, 0x6b1f30, 1); g.strokeCircle(p.X, p.Y, 6 * k);
+    // 축은 원점(0)에서 시작한다: 세로 부피, 가로 압력 (교과서 그림 Ⅵ-3)
+    g.lineStyle(3, 0x546e7a, 1); g.lineBetween(A.ox, y + 14, A.ox, A.oy); g.lineBetween(A.ox, A.oy, x + w - 12, A.oy);
+    g.fillStyle(0x546e7a, 1); g.fillTriangle(A.ox, y + 8, A.ox - 6, y + 20, A.ox + 6, y + 20); g.fillTriangle(x + w - 6, A.oy, x + w - 18, A.oy - 6, x + w - 18, A.oy + 6);
+    this.gxLabel.setPosition(A.ox + A.pw / 2, y + h - 12).setVisible(true); this.gyLabel.setPosition(x + 17, A.oy - A.ph / 2).setVisible(true);
+
+    const line = (vFrom: number, vTo: number, upTo = 1) => {
+      const pts = curveSamples(cfg, vFrom, vTo, 28).map(q => toGraph(this.L.graph, cfg, q.p, q.v));
+      const n = Math.max(1, Math.round((pts.length - 1) * upTo));
+      g.beginPath(); g.moveTo(pts[0].X, pts[0].Y); for (let i = 1; i <= n; i++) g.lineTo(pts[i].X, pts[i].Y); g.strokePath();
+    };
+    const read = this.st.readings.filter(r => r.dwellMs >= m.dwellMs && r.volume >= m.to && r.volume <= m.from).sort((a, b) => b.volume - a.volume);
+    // 눈금을 모두 읽으면 곡선이 양쪽으로 이어져 나가 반비례 모양(축에 가까워지는 곡선)이 드러난다
+    if (read.length === m.from - m.to + 1) {
+      if (!this.graphDoneAt) this.graphDoneAt = now;
+      const f = Math.min(1, (now - this.graphDoneAt) / 900);
+      g.lineStyle(3, 0xc0506a, 0.45);
+      line(m.from, cfg.syringe.max, f); line(m.to, cfg.syringe.start / GRAPH_P_MAX, f);
+    } else this.graphDoneAt = 0;
+    if (read.length > 1) { g.lineStyle(3, 0xc0506a, 0.9); line(read[0].volume, read[read.length - 1].volume); }
+    for (const r of read) {
+      const p = toGraph(this.L.graph, cfg, needleFromVolume(r.volume, cfg.syringe.start), r.volume);
+      const pop = now - (this.popAt[r.volume] ?? -1e9); const k = pop < 350 ? 1 + 0.9 * Math.sin((pop / 350) * Math.PI) : 1;
+      g.fillStyle(0xc0506a, 1); g.fillCircle(p.X, p.Y, 4.5 * k); g.lineStyle(2, 0x6b1f30, 1); g.strokeCircle(p.X, p.Y, 4.5 * k);
     }
   }
 

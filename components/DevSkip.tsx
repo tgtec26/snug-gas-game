@@ -17,7 +17,7 @@ export function DevSkip() {
   if (process.env.NODE_ENV === 'production') return null;
   const btn = 'px-3 py-1 rounded bg-black/60 border border-white/40';
   return (
-    <div className="absolute left-16 bottom-10 z-50 pointer-events-auto flex items-center gap-2 text-[14px] text-white/80">
+    <div className="absolute left-[360px] bottom-10 z-50 pointer-events-auto flex items-center gap-2 text-[14px] text-white/80">
       <span className="px-2 py-1 rounded bg-black/60">dev: {phase}</span>
       <button type="button" className={btn} onClick={e => { next(); e.currentTarget.blur(); }}>next()</button>
       {phase === 'exam' && currentId && (

@@ -274,7 +274,7 @@ export class DipScene extends Phaser.Scene {
     const { x, y, r } = this.L.person;
     g.fillStyle(0x000000, 0.2); g.fillEllipse(x, y + r + 70, r * 2, 26);
     if (this.drag?.kind === 'gear') { g.lineStyle(6, 0xffc933, 0.5 + 0.4 * Math.sin(now / 150)); g.strokeCircle(x, y, r + 30); }
-    this.sp.kid.setTexture(heroKey(useGame.getState().heroId, this.worn)).setPosition(x, y + 5).setDisplaySize(151, 250);   // 착용 그림으로 바뀐다
+    this.sp.kid.setTexture(heroKey(useGame.getState().heroId, this.worn)).setPosition(x, y + 5).setScale(250 / 640);   // 착용 그림으로 바뀐다
   }
 
   private drawGearIcon(g: Phaser.GameObjects.Graphics, gear: Gear, x: number, y: number, s: number) {

@@ -63,7 +63,7 @@ export function SummaryOverlay() {
           <div className="flex items-center gap-4 border-b-2 border-slate-300 pb-2 mb-4">
             <div className="w-[68px] h-[68px] shrink-0 rounded-full overflow-hidden bg-teal-100 border-[3px] border-amber-300">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/assets/hero/${heroId}.webp`} alt="" draggable={false} className="block w-full" />
+              <img src={`/assets/hero/${heroId}.webp`} alt="" draggable={false} className="block h-full w-full object-cover object-top" />
             </div>
             <div>
               <div className="text-[34px] font-black leading-tight">오늘의 진료 결과</div>
