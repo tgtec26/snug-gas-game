@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { toPng } from 'html-to-image';
+import { toBlob } from 'html-to-image';
 import { useGame } from '@/game/store';
 import { useDataStore } from '@/game/dataStore';
 import { useUI } from '@/game/ui';
@@ -9,6 +9,7 @@ import { summarize } from '@/game/summary';
 import { loadDex, freshCards, clearFresh } from '@/game/dex';
 import { useLock } from '@/components/hooks/useLock';
 import { StarIcon } from '@/components/HUD';
+import { PortfolioSubmitPanel } from '@/components/PortfolioSubmitPanel';
 
 const CARD_NAME: Record<string, (id: string, name: (pid: string) => string) => string> = {
   patients: (id, name) => name(id),
@@ -41,14 +42,27 @@ export function SummaryOverlay() {
   const dexTotal = patients.length + 2 + 2 + 2;
   const dexHave = dex.patients.length + dex.laws.length + dex.particles.length + dex.people.length;
 
+  const makePngBlob = async () => {
+    if (!card.current) throw new Error('missing-card');
+    const blob = await toBlob(card.current, {
+      pixelRatio: 2,
+      backgroundColor: '#fbf6ea',
+      filter: node => !(node instanceof HTMLElement && node.dataset.exportExclude === 'true'),
+    });
+    if (!blob) throw new Error('empty-card');
+    return blob;
+  };
+
   const save = async () => {
-    if (!card.current || saving) return;
+    if (saving) return;
     setSaving(true); setErr('');
     try {
-      const url = await toPng(card.current, { pixelRatio: 2, backgroundColor: '#fbf6ea' });
+      const blob = await makePngBlob();
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = '공기-진료소-결과.png';
       document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
     } catch { setErr('저장하지 못했어요. 다시 눌러 보세요.'); }
     setSaving(false);
   };
@@ -93,6 +107,11 @@ export function SummaryOverlay() {
             </div>
           )}
           <div className="text-[18px] text-slate-600">진료 기록부 <b className="tabular-nums">{dexHave}</b>/{dexTotal}</div>
+          <PortfolioSubmitPanel
+            makePngBlob={makePngBlob}
+            title={`공기 진료소 결과 - ${playerName}`}
+            description={`치료한 환자 ${sum.treated}명, 별 ${sum.stars}개, 잘못 돌린 조절기 ${sum.wrongGauge}번`}
+          />
         </div>
         <div className="mt-4 flex justify-center gap-3">
           <button type="button" disabled={locked || saving} onClick={save} className={`${btn} bg-amber-400 text-black`}>{saving ? '저장 중' : '나의 결과 내려받기'}</button>
