@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   findSelectedClass,
+  isFreshPortfolioPreview,
   loadPortfolioDestinations,
   parseStudentNumbers,
   PORTFOLIO_BASE_URL,
@@ -21,17 +22,24 @@ interface PortfolioSubmitPanelProps {
 }
 
 type Phase = 'idle' | 'preview' | 'submitting' | 'done';
+type ConfirmedPreview = {
+  revision: number;
+  blob: Blob;
+  url: string;
+  destination: SelectedPortfolioDestination;
+  studentNumbers: string[];
+};
 
 export function PortfolioSubmitPanel({ makePngBlob, title, description }: PortfolioSubmitPanelProps) {
   const [destinations, setDestinations] = useState<PortfolioDestinations | null>(null);
   const [selected, setSelected] = useState<SelectedPortfolioDestination>({ teacherId: '', classId: '' });
   const [studentInput, setStudentInput] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
-  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
-  const [previewUrl, setPreviewUrl] = useState('');
+  const [confirmedPreview, setConfirmedPreview] = useState<ConfirmedPreview | null>(null);
   const [status, setStatus] = useState('보낼 반과 번호를 고른 뒤 미리보기를 만드세요.');
   const [results, setResults] = useState<PortfolioSubmitResult[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const previewRevisionRef = useRef(0);
 
   useEffect(() => {
     let alive = true;
@@ -48,18 +56,20 @@ export function PortfolioSubmitPanel({ makePngBlob, title, description }: Portfo
   }, []);
 
   useEffect(() => () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
+    if (confirmedPreview?.url) URL.revokeObjectURL(confirmedPreview.url);
+  }, [confirmedPreview]);
 
   const selectedClass = useMemo(() => findSelectedClass(destinations, selected), [destinations, selected]);
   const studentNumbers = useMemo(() => parseStudentNumbers(studentInput).numbers, [studentInput]);
   const canPreview = Boolean(selectedClass && studentInput.trim() && phase !== 'submitting');
-  const canSubmit = Boolean(selectedClass && previewBlob && studentNumbers.length > 0 && phase === 'preview');
+  const canSubmit = Boolean(confirmedPreview && phase === 'preview');
 
   const resetPreview = (message = '내용이 바뀌었어요. 미리보기를 다시 만들어 주세요.') => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewBlob(null);
-    setPreviewUrl('');
+    previewRevisionRef.current += 1;
+    setConfirmedPreview(current => {
+      if (current?.url) URL.revokeObjectURL(current.url);
+      return null;
+    });
     setResults([]);
     setPhase('idle');
     setStatus(message);
@@ -90,34 +100,44 @@ export function PortfolioSubmitPanel({ makePngBlob, title, description }: Portfo
       setStatus('보낼 반을 먼저 골라 주세요.');
       return;
     }
+    const revision = previewRevisionRef.current + 1;
+    previewRevisionRef.current = revision;
+    const snapshot = {
+      destination: { ...selected },
+      studentNumbers: [...studentNumbers],
+    };
     setStatus('결과 이미지를 만드는 중이에요.');
     try {
       const blob = await makePngBlob();
+      if (!isFreshPortfolioPreview(revision, previewRevisionRef.current)) return;
       const blobError = validatePngBlob(blob);
       if (blobError) {
         setStatus(blobError);
         return;
       }
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      setPreviewBlob(blob);
-      setPreviewUrl(URL.createObjectURL(blob));
+      const url = URL.createObjectURL(blob);
+      setConfirmedPreview(current => {
+        if (current?.url) URL.revokeObjectURL(current.url);
+        return { revision, blob, url, ...snapshot };
+      });
       setPhase('preview');
       setStatus('미리보기를 확인한 뒤 포트폴리오에 보내기를 눌러 주세요.');
     } catch {
+      if (!isFreshPortfolioPreview(revision, previewRevisionRef.current)) return;
       setStatus('결과 이미지를 만들지 못했어요. PNG 내려받기를 사용해 주세요.');
     }
   };
 
   const submit = async () => {
-    if (!selectedClass || !previewBlob || !canSubmit) return;
+    if (!confirmedPreview || confirmedPreview.revision !== previewRevisionRef.current || !canSubmit) return;
     const controller = new AbortController();
     abortRef.current = controller;
     setPhase('submitting');
     setStatus('포트폴리오에 보내는 중이에요.');
     const nextResults = await submitPortfolioGroup({
-      destination: selected,
-      studentNumbers,
-      blob: previewBlob,
+      destination: confirmedPreview.destination,
+      studentNumbers: confirmedPreview.studentNumbers,
+      blob: confirmedPreview.blob,
       title,
       description,
       signal: controller.signal,
@@ -142,6 +162,7 @@ export function PortfolioSubmitPanel({ makePngBlob, title, description }: Portfo
 
   const teacherOptions = destinations?.teachers ?? [];
   const classOptions = selectedClass?.teacher.classes ?? [];
+  const previewUrl = confirmedPreview?.url ?? '';
 
   return (
     <section data-export-exclude="true" className="mt-4 rounded-2xl border-[4px] border-teal-300 bg-white px-4 py-3 text-slate-900">

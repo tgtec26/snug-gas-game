@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   findSelectedClass,
+  isFreshPortfolioPreview,
   makeIdempotencyKey,
   parseStudentNumbers,
   submitPortfolioGroup,
@@ -44,6 +45,17 @@ describe('portfolio helpers', () => {
       studentNumber: '7',
       now: new Date('2026-10-03T12:00:00Z'),
     })).toBe('air-clinic:science-b:b-1:7:2026-10-03');
+  });
+
+  it('discards delayed PNG completion after destination revision changes', async () => {
+    let currentRevision = 1;
+    const startedRevision = currentRevision;
+    let accepted: Blob | null = null;
+    const delayedPng = Promise.resolve(new Blob(['old'], { type: 'image/png' }));
+    currentRevision += 1;
+    const blob = await delayedPng;
+    if (isFreshPortfolioPreview(startedRevision, currentRevision)) accepted = blob;
+    expect(accepted).toBeNull();
   });
 });
 

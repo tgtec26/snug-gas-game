@@ -125,6 +125,10 @@ export function validatePngBlob(blob: Blob): string | null {
   return null;
 }
 
+export function isFreshPortfolioPreview(startedRevision: number, currentRevision: number): boolean {
+  return startedRevision === currentRevision;
+}
+
 export function findSelectedClass(
   destinations: PortfolioDestinations | null,
   selected: SelectedPortfolioDestination,
