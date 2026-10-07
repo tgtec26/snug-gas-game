@@ -17,14 +17,14 @@ export function DevSkip() {
   if (process.env.NODE_ENV === 'production') return null;
   const btn = 'px-3 py-1 rounded bg-black/60 border border-white/40';
   return (
-    <div className="absolute left-[360px] bottom-10 z-50 pointer-events-auto flex items-center gap-2 text-[14px] text-white/80">
+    <div className="absolute left-2 top-20 z-50 pointer-events-none flex items-center gap-2 text-[14px] text-white/80">
       <span className="px-2 py-1 rounded bg-black/60">dev: {phase}</span>
-      <button type="button" className={btn} onClick={e => { next(); e.currentTarget.blur(); }}>next()</button>
+      <button type="button" className={`${btn} pointer-events-auto`} onClick={e => { next(); e.currentTarget.blur(); }}>next()</button>
       {phase === 'exam' && currentId && (
-        <button type="button" className={btn} onClick={e => { completeExam(currentId, { firstCorrect: true, inTime: true, bonus: true, wrongGauge: 0 }); e.currentTarget.blur(); }}>재현 성공</button>
+        <button type="button" className={`${btn} pointer-events-auto`} onClick={e => { completeExam(currentId, { firstCorrect: true, inTime: true, bonus: true, wrongGauge: 0 }); e.currentTarget.blur(); }}>재현 성공</button>
       )}
       {phase === 'emergency' && (
-        <button type="button" className={btn} onClick={e => { finishEmergency([true, true, true, true]); e.currentTarget.blur(); }}>응급실 완료</button>
+        <button type="button" className={`${btn} pointer-events-auto`} onClick={e => { finishEmergency([true, true, true, true]); e.currentTarget.blur(); }}>응급실 완료</button>
       )}
     </div>
   );

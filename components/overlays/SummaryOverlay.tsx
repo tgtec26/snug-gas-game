@@ -72,7 +72,7 @@ export function SummaryOverlay() {
   const btn = 'h-[56px] px-7 rounded-2xl text-[20px] font-black disabled:opacity-40 disabled:grayscale shadow-[0_5px_0_rgba(0,0,0,0.35)] active:translate-y-1';
   return (
     <div className="absolute inset-0 bg-black/70 pointer-events-auto flex items-center justify-center">
-      <div className="relative" style={{ animation: 'pop .5s cubic-bezier(.2,1.4,.4,1) both' }}>
+      <div className="relative" style={{ zoom: 0.88, animation: 'pop .5s cubic-bezier(.2,1.4,.4,1) both' }}>
         <div ref={card} className="w-[760px] rounded-3xl bg-[#fbf6ea] border-[6px] border-amber-300 px-10 py-8 text-slate-900">
           <div className="flex items-center gap-4 border-b-2 border-slate-300 pb-2 mb-4">
             <div className="w-[68px] h-[68px] shrink-0 rounded-full overflow-hidden bg-teal-100 border-[3px] border-amber-300">
@@ -107,12 +107,12 @@ export function SummaryOverlay() {
             </div>
           )}
           <div className="text-[18px] text-slate-600">진료 기록부 <b className="tabular-nums">{dexHave}</b>/{dexTotal}</div>
-          <PortfolioSubmitPanel
-            makePngBlob={makePngBlob}
-            title={`공기 진료소 결과 - ${playerName}`}
-            description={`치료한 환자 ${sum.treated}명, 별 ${sum.stars}개, 잘못 돌린 조절기 ${sum.wrongGauge}번`}
-          />
         </div>
+        <PortfolioSubmitPanel
+          makePngBlob={makePngBlob}
+          title={`공기 진료소 결과 - ${playerName}`}
+          description={`치료한 환자 ${sum.treated}명, 별 ${sum.stars}개, 잘못 돌린 조절기 ${sum.wrongGauge}번`}
+        />
         <div className="mt-4 flex justify-center gap-3">
           <button type="button" disabled={locked || saving} onClick={save} className={`${btn} bg-amber-400 text-black`}>{saving ? '저장 중' : '나의 결과 내려받기'}</button>
           <button type="button" disabled={locked} onClick={openDex} className={`${btn} bg-white text-slate-900`}>진료 기록부</button>
